@@ -11,10 +11,11 @@ import RunGame
 --            = 2
 --
 
-empty :: Hand
+--empty :: Hand
+
 
 --value :: Hand -> Integer
 
---gameOver :: hand -> Hand -> Player
+--gameOver :: Hand -> Hand -> Player
 
 --winner :: Hand -> Hand -> Player
