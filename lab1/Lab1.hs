@@ -28,8 +28,7 @@ testlist2 = []
 
 --run test by writing "mytest testlist" in terminal
 mytest :: [(Integer, Integer)] -> Bool
-mytest []          = error "mytest: empty list"
-mytest [(i1,i2)]   = prop_powers i1 i2
+mytest []          = True
 mytest ((i1,i2):l) = prop_powers i1 i2 && mytest l
 
 
