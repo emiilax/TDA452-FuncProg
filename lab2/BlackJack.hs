@@ -11,7 +11,7 @@ import RunGame
 --            = 2
 --
 
---empty :: Hand
+empty :: Hand
 
 --value :: Hand -> Integer
 
