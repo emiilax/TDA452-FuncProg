@@ -1,6 +1,6 @@
 module BlackJack where
-import Cards
-import RunGame
+import           Cards
+import           RunGame
 
 -- hand2 = Add (Card (Numeric 2) Hearts) (Add (Card Jack Spades) Empty)
 --
@@ -12,8 +12,13 @@ import RunGame
 --
 
 empty :: Hand
+empty = Empty
 
---value :: Hand -> Integer
+value :: Hand -> Integer
+value Empty = 0
+value 
+
+
 
 --gameOver :: hand -> Hand -> Player
 
