@@ -11,19 +11,57 @@ import           RunGame
 --            = 2
 --
 
+--empty: Method that returns an empty hand
 empty :: Hand
 empty = Empty
 
-rankValue :: Rank -> Integer
-rankValue (Numeric k) = k
-rankValue _ = 10
 
 
+-- value: calculates the value of a given hand. If the hand consist Aces, the
+-- function check whether the hand consist more than two Aces or if the hand
+-- without the Aces are more then 10. In that case, Aces are worth 1 otherwise 11
 value :: Hand -> Integer
-value Empty = 0 
-value (Add (Card r s) hand) = rankValue r + value hand
+value Empty = 0
+value hand | (nbrOfAces hand) == 1 && value (removeAces hand) <  11 = value (removeAces hand) + 11
+           | (nbrOfAces hand) == 1 && value (removeAces hand) >= 11 = value (removeAces hand) + nbrOfAces hand
+           | (nbrOfAces hand) >  1 = value (removeAces hand) + nbrOfAces hand
+value (Add card hand) = cardValue card + value hand
 
---Hand hand1 = (Add (Card Ace Spades) Empty)
---gameOver :: hand -> Hand -> Player
+-- cardValue: returns the value of a card. Uses rankValue to calculate
+cardValue :: Card -> Integer
+cardValue (Card r s) = rankValue r
 
---winner :: Hand -> Hand -> Player
+-- rankValues: returns the value of the rank. Returns 0 if Ace, since we add
+-- them in method "value" instead
+rankValue :: Rank -> Integer
+rankValue (Numeric m)  = m
+rankValue Ace          = 0
+rankValue _            = 10
+
+-- removeAces: returns a hand with no Aces. Used in vale to calculate value of hand
+-- without any Aces
+removeAces :: Hand -> Hand
+removeAces Empty = Empty
+removeAces (Add (Card r s) hand) | r == Ace = removeAces hand
+removeAces (Add (Card r s) hand) = (Add (Card r s) (removeAces hand))
+
+-- nbrOfAces: calculates the nbrOfAces in a hand. If there is an ace, add 1,
+-- otherwise 0 and continue until hand is empty
+nbrOfAces :: Hand -> Integer
+nbrOfAces Empty = 0
+nbrOfAces (Add (Card rank suit) hand) | rank == Ace = 1 + (nbrOfAces hand)
+nbrOfAces (Add (Card rank suit) hand) = (nbrOfAces hand)
+
+-- gameOver: if hand overrites 21, then game is over
+gameOver :: Hand -> Bool
+gameOver hand = value hand > 21
+
+-- winner: returns whether the guest or bank wins. It checks who wins by the rules
+--given in assignment "The winner is the player with the highest score that does
+--not exceed 21. If the players end up with the same score, then the bank wins.
+--The bank also wins if both players go bust."
+winner :: Hand -> Hand -> Player
+winner guest bank | value guest <= value bank = Bank
+                  | gameOver guest = Bank
+                  | gameOver bank = Guest
+                  | value guest > value bank = Guest
