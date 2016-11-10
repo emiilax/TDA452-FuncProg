@@ -16,8 +16,7 @@ empty = Empty
 
 rankValue :: Rank -> Integer
 rankValue (Numeric k) = k
-rankValue Ace | nbrOfAces < 2 || valueMinusAces < 10  = 11
-rankValue Ace = 1
+rankValue Ace = 0
 rankValue _ = 10
 
 nbrOfAces :: Hand -> Integer
@@ -27,15 +26,20 @@ nbrOfAces (Add (Card r s) hand) = nbrOfAces hand
 
 valueMinusAces :: Hand -> Integer
 valueMinusAces Empty = 0
-valueMinusAces (Add (Card r s) hand) | r == Ace = valueMinusAces hand
 valueMinusAces (Add (Card r s) hand) = rankValue r + valueMinusAces hand
 
 value :: Hand -> Integer
-value Empty = 0
---value (Add (Card r s) hand) | r == Ace = value hand
-value (Add (Card r s) hand) = rankValue r + value hand
+value hand | (valueMinusAces hand > 10) || (nbrOfAces hand > 1) = valueMinusAces hand + nbrOfAces hand
+value hand = (valueMinusAces hand) + nbrOfAces * 11
 
---Hand hand1 = (Add (Card Ace Spades) Empty)
---gameOver :: hand -> Hand -> Player
+
+
+hand1 = Add (Card Ace Spades) (Add (Card Ace Spades) (Add (Card (Numeric 3) Spades) Empty))
+
+--Hand hand1 = (Add (Card Ace Spades) Empty
+
+--gameOver :: Hand -> Bool
+
+
 
 --winner :: Hand -> Hand -> Player
