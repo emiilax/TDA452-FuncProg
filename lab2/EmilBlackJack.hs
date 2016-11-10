@@ -30,11 +30,16 @@ valueMinusAces (Add (Card r s) hand) = rankValue r + valueMinusAces hand
 
 value :: Hand -> Integer
 value hand | (valueMinusAces hand > 10) || (nbrOfAces hand > 1) = valueMinusAces hand + nbrOfAces hand
-value hand = (valueMinusAces hand) + nbrOfAces * 11
+value hand = (valueMinusAces hand) + nbrOfAces hand * 11
 
+(<+) :: Hand -> Hand -> Hand
+Empty <+ hand2 = hand2
+hand1 <+ Empty = hand1
+(Add card hand1) <+ (hand2) = hand1 <+ (Add card hand2)
 
 
 hand1 = Add (Card Ace Spades) (Add (Card Ace Spades) (Add (Card (Numeric 3) Spades) Empty))
+hand2 = (Add (Card (Numeric 5) Spades) Empty)
 
 --Hand hand1 = (Add (Card Ace Spades) Empty
 
