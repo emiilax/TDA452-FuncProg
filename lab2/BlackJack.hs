@@ -11,6 +11,15 @@ import           RunGame
 --            = 2
 --
 
+example_card_1 = Card King Clubs
+example_card_2 = Card Ace Spades
+example_card_3 = Card (Numeric 5) Clubs
+
+example_hand_1 = Add example_card_1 Empty
+example_hand_2 = Add example_card_2 example_hand_1
+
+example_hand_3 = Add example_card_3 Empty
+
 --empty: Method that returns an empty hand
 empty :: Hand
 empty = Empty
@@ -65,3 +74,7 @@ winner guest bank | value guest <= value bank = Bank
                   | gameOver guest = Bank
                   | gameOver bank = Guest
                   | value guest > value bank = Guest
+
+(<+) :: Hand -> Hand -> Hand
+(<+) Empty hand = hand
+(<+) (Add card hand1) hand2 = (Add card (hand1 <+ hand2))
