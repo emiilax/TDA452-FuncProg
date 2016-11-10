@@ -1,6 +1,7 @@
 module BlackJack where
 import           Cards
 import           RunGame
+import           Test.QuickCheck
 
 -- hand2 = Add (Card (Numeric 2) Hearts) (Add (Card Jack Spades) Empty)
 --
@@ -17,7 +18,6 @@ example_card_3 = Card (Numeric 5) Clubs
 
 example_hand_1 = Add example_card_1 Empty
 example_hand_2 = Add example_card_2 example_hand_1
-
 example_hand_3 = Add example_card_3 Empty
 
 --empty: Method that returns an empty hand
@@ -78,3 +78,29 @@ winner guest bank | value guest <= value bank = Bank
 (<+) :: Hand -> Hand -> Hand
 (<+) Empty hand = hand
 (<+) (Add card hand1) hand2 = (Add card (hand1 <+ hand2))
+
+prop_onTopOf_assoc :: Hand -> Hand -> Hand -> Bool
+prop_onTopOf_assoc p1 p2 p3 =
+    p1<+(p2<+p3) == (p1<+p2)<+p3
+
+prop_size_onTopOf :: Hand -> Hand -> Bool
+prop_size_onTopOf hand1 hand2 = (size hand1 + size hand2) == size (hand1 <+ hand2)
+
+fullDeck :: Hand
+fullDeck = fullSuit Clubs <+ fullSuit Diamonds <+ fullSuit Spades <+ fullSuit Hearts
+
+fullSuit :: Suit -> Hand
+fullSuit suit = (Add (Card (Numeric 2) suit)
+                (Add (Card (Numeric 3) suit)
+                (Add (Card (Numeric 4) suit)
+                (Add (Card (Numeric 5) suit)
+                (Add (Card (Numeric 6) suit)
+                (Add (Card (Numeric 7) suit)
+                (Add (Card (Numeric 8) suit)
+                (Add (Card (Numeric 9) suit)
+                (Add (Card (Numeric 10) suit)
+                (Add (Card Jack suit)
+                (Add (Card Queen suit)
+                (Add (Card King suit)
+                (Add (Card Ace suit) Empty
+                 )))))))))))))
