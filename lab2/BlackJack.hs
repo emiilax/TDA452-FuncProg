@@ -104,3 +104,15 @@ fullSuit suit = (Add (Card (Numeric 2) suit)
                 (Add (Card King suit)
                 (Add (Card Ace suit) Empty
                  )))))))))))))
+
+draw :: Hand -> Hand -> (Hand, Hand)
+draw Empty hand = error "draw: The deck is empty."
+draw (Add card deck) hand = (deck, (Add card hand))
+
+playBank :: Hand -> Hand
+playBank deck = playBank' deck Empty
+
+playBank' :: Hand -> Hand -> Hand
+playBank' deck bankHand | value bankHand < 16 = playBank' deck' bankHand'
+  where (deck',bankHand') = draw deck bankHand
+playBank' deck bankHand = bankHand
