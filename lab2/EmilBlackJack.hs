@@ -51,6 +51,41 @@ listOfRank = [(Numeric 2),
               King,
               Ace]
 
+fullDeck :: Hand
+fullDeck = fullSuit Clubs <+ fullSuit Diamonds <+ fullSuit Spades <+ fullSuit Hearts
+
+fullSuit :: Suit -> Hand
+fullSuit suit = (Add (Card (Numeric 2) suit)
+                (Add (Card (Numeric 3) suit)
+                (Add (Card (Numeric 4) suit)
+                (Add (Card (Numeric 5) suit)
+                (Add (Card (Numeric 6) suit)
+                (Add (Card (Numeric 7) suit)
+                (Add (Card (Numeric 8) suit)
+                (Add (Card (Numeric 9) suit)
+                (Add (Card (Numeric 10) suit)
+                (Add (Card Jack suit)
+                (Add (Card Queen suit)
+                (Add (Card King suit)
+                (Add (Card Ace suit) Empty
+                 )))))))))))))
+
+draw :: Hand -> Hand -> (Hand, Hand)
+draw Empty hand = error "draw: The deck is empty."
+draw (Add card deck) hand = (deck, (Add card hand))
+
+
+
+playBank :: Hand -> Hand
+playBank hand = playBank' hand Empty
+
+playBank' :: Hand -> Hand -> Hand
+playBank' deck bankhand | value bankhand >= 16 = bankhand
+playBank' deck bankhand = playBank' deck' bankhand'
+  where (deck', bankhand') = draw deck bankhand
+
+
+
 --getSuitCards :: Suit -> Hand
 --getSuitCards s = Add (Card s r) Empty
 --    where r =
@@ -62,6 +97,8 @@ prop_onTopOf_assoc p1 p2 p3 =
 
 prop_size_onTopOf :: Hand -> Hand -> Bool
 prop_size_onTopOf hand1 hand2 = (size hand1 + size hand2) == size (hand1 <+ hand2)
+
+fullD = fullDeck
 
 
 hand1 = Add (Card Ace Spades) (Add (Card Ace Spades) (Add (Card (Numeric 3) Spades) Empty))
