@@ -7,7 +7,7 @@ import           Test.QuickCheck
 --
 -- size hand2 = size (Add (Card (Numeric 2) Hearts) (Add (Card Jack Spades) Empty))
 --            = 1 + size (Add (Card Jack Spades) Empty)
---            = 1 + 1 + Empty
+--            = 1 + 1 + Size(Empty)
 --            = 1 + 1 + 0
 --            = 2
 --
@@ -18,7 +18,7 @@ example_card_3 = Card (Numeric 5) Clubs
 
 example_hand_1 = Add example_card_1 Empty
 example_hand_2 = Add example_card_2 example_hand_1
-example_hand_3 = Add example_card_3 Empty
+example_hand_3 = Add example_card_3 example_hand_2
 
 --empty: Method that returns an empty hand
 empty :: Hand
@@ -31,35 +31,49 @@ empty = Empty
 -- without the Aces are more then 10. In that case, Aces are worth 1 otherwise 11
 value :: Hand -> Integer
 value Empty = 0
-value hand | (nbrOfAces hand) == 1 && value (removeAces hand) <  11 = value (removeAces hand) + 11
-           | (nbrOfAces hand) == 1 && value (removeAces hand) >= 11 = value (removeAces hand) + nbrOfAces hand
-           | (nbrOfAces hand) >  1 = value (removeAces hand) + nbrOfAces hand
-value (Add card hand) = cardValue card + value hand
+value hand | (numberOfAces hand) == 1 && value (removeAces hand) <  11 = value (removeAces hand) + 11
+           | (numberOfAces hand) == 1 && value (removeAces hand) >= 11 = value (removeAces hand) + numberOfAces hand
+           | (numberOfAces hand) >  1 = value (removeAces hand) + numberOfAces hand
+value (Add card hand) = valueCard card + value hand
 
--- cardValue: returns the value of a card. Uses rankValue to calculate
-cardValue :: Card -> Integer
-cardValue (Card r s) = rankValue r
 
--- rankValues: returns the value of the rank. Returns 0 if Ace, since we add
+
+
+
+--Change "value" and "removeAces" to this?
+--
+--value :: Hand -> Integer
+--value hand | (valueMinusAces hand > 10) || (nbrOfAces hand > 1) = valueMinusAces hand + nbrOfAces hand
+--value hand = (valueMinusAces hand) + nbrOfAces hand * 11
+
+--valueMinusAces :: Hand -> Integer
+--valueMinusAces Empty = 0
+--valueMinusAces (Add (Card r s) hand) = rankValue r + valueMinusAces hand
+
+-- valueCard: returns the value of a card. Uses valueRank to calculate
+valueCard :: Card -> Integer
+valueCard (Card r s) = valueRank r
+
+-- valueRanks: returns the value of the rank. Returns 0 if Ace, since we add
 -- them in method "value" instead
-rankValue :: Rank -> Integer
-rankValue (Numeric m)  = m
-rankValue Ace          = 0
-rankValue _            = 10
+valueRank :: Rank -> Integer
+valueRank (Numeric m)  = m
+valueRank Ace          = 0
+valueRank _            = 10
 
 -- removeAces: returns a hand with no Aces. Used in vale to calculate value of hand
 -- without any Aces
 removeAces :: Hand -> Hand
 removeAces Empty = Empty
 removeAces (Add (Card r s) hand) | r == Ace = removeAces hand
-removeAces (Add (Card r s) hand) = (Add (Card r s) (removeAces hand))
+removeAces (Add (Card r s) hand) = Add (Card r s) (removeAces hand)
 
--- nbrOfAces: calculates the nbrOfAces in a hand. If there is an ace, add 1,
+-- numberOfAces: calculates the numberOfAces in a hand. If there is an ace, add 1,
 -- otherwise 0 and continue until hand is empty
-nbrOfAces :: Hand -> Integer
-nbrOfAces Empty = 0
-nbrOfAces (Add (Card rank suit) hand) | rank == Ace = 1 + (nbrOfAces hand)
-nbrOfAces (Add (Card rank suit) hand) = (nbrOfAces hand)
+numberOfAces :: Hand -> Integer
+numberOfAces Empty = 0
+numberOfAces (Add (Card rank suit) hand) | rank == Ace = 1 + numberOfAces hand
+numberOfAces (Add (Card rank suit) hand) = numberOfAces hand
 
 -- gameOver: if hand overrites 21, then game is over
 gameOver :: Hand -> Bool
@@ -70,14 +84,14 @@ gameOver hand = value hand > 21
 --not exceed 21. If the players end up with the same score, then the bank wins.
 --The bank also wins if both players go bust."
 winner :: Hand -> Hand -> Player
-winner guest bank | value guest <= value bank = Bank
-                  | gameOver guest = Bank
+winner guest bank | gameOver guest = Bank
                   | gameOver bank = Guest
+                  | value guest <= value bank = Bank
                   | value guest > value bank = Guest
 
 (<+) :: Hand -> Hand -> Hand
 (<+) Empty hand = hand
-(<+) (Add card hand1) hand2 = (Add card (hand1 <+ hand2))
+(<+) (Add card hand1) hand2 = Add card (hand1 <+ hand2)
 
 prop_onTopOf_assoc :: Hand -> Hand -> Hand -> Bool
 prop_onTopOf_assoc p1 p2 p3 =
@@ -90,26 +104,26 @@ fullDeck :: Hand
 fullDeck = fullSuit Clubs <+ fullSuit Diamonds <+ fullSuit Spades <+ fullSuit Hearts
 
 fullSuit :: Suit -> Hand
-fullSuit suit = (Add (Card (Numeric 2) suit)
-                (Add (Card (Numeric 3) suit)
-                (Add (Card (Numeric 4) suit)
-                (Add (Card (Numeric 5) suit)
-                (Add (Card (Numeric 6) suit)
-                (Add (Card (Numeric 7) suit)
-                (Add (Card (Numeric 8) suit)
-                (Add (Card (Numeric 9) suit)
-                (Add (Card (Numeric 10) suit)
-                (Add (Card Jack suit)
-                (Add (Card Queen suit)
-                (Add (Card King suit)
-                (Add (Card Ace suit) Empty
-                 )))))))))))))
+fullSuit suit = Add (Card (Numeric 2) suit)
+                  (Add (Card (Numeric 3) suit)
+                    (Add (Card (Numeric 4) suit)
+                      (Add (Card (Numeric 5) suit)
+                        (Add (Card (Numeric 6) suit)
+                          (Add (Card (Numeric 7) suit)
+                            (Add (Card (Numeric 8) suit)
+                              (Add (Card (Numeric 9) suit)
+                                (Add (Card (Numeric 10) suit)
+                                  (Add (Card Jack suit)
+                                    (Add (Card Queen suit)
+                                      (Add (Card King suit)
+                                        (Add (Card Ace suit) Empty
+                 ))))))))))))
 
 --fullSuit suit = (Add (Card (Numeric a)) suit) | a <- [2..10]
 
 draw :: Hand -> Hand -> (Hand, Hand)
 draw Empty hand = error "draw: The deck is empty."
-draw (Add card deck) hand = (deck, (Add card hand))
+draw (Add card deck) hand = (deck, Add card hand)
 
 playBank :: Hand -> Hand
 playBank deck = playBank' deck Empty
