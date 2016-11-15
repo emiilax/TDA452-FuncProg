@@ -120,8 +120,9 @@ playBank' deck bankHand = bankHand
 -- random card from the hand and then removes the card from the deck with removeCardFromDeck
 shuffle :: StdGen -> Hand -> Hand
 shuffle _ Empty = Empty
-shuffle g hand = Add rcard(shuffle g (removeCardFromDeck rcard hand))
-    where rcard = getCard (fst(randomR (0, (size hand-1)) g)) hand
+shuffle g hand = Add rcard (shuffle g1 (newDeck rcard hand))
+  where (pos, g1) = randomR (0, (size hand-1)) g
+        rcard = getCard pos hand
 
 
 getCard :: Integer -> Hand -> Card
@@ -131,3 +132,11 @@ getCard n (Add card hand) = getCard(n-1) hand
 removeCardFromDeck :: Card -> Hand -> Hand
 removeCardFromDeck c1 (Add c2 hand) | c1 == c2 = hand
 removeCardFromDeck c1 (Add c2 hand) = Add c2 (newDeck c1 hand)
+
+prop_shuffle_sameCards :: StdGen -> Card -> Hand -> Bool
+prop_shuffle_sameCards g c h =
+    c `belongsTo` h == c `belongsTo` shuffle g h
+
+belongsTo :: Card -> Hand -> Bool
+c `belongsTo` Empty = False
+c `belongsTo` (Add c' h) = c == c' || c `belongsTo` h
