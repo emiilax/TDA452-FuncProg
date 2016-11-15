@@ -81,6 +81,8 @@ winner guest bank | gameOver guest = Bank
                   | value guest <= value bank = Bank
                   | value guest > value bank = Guest
 
+--Merges to hands togheter. First hand as input will be at the top of the hand
+--and the second will be at the bottom.
 (<+) :: Hand -> Hand -> Hand
 (<+) Empty hand = hand
 (<+) (Add card hand1) hand2 = Add card (hand1 <+ hand2)
@@ -92,9 +94,13 @@ prop_onTopOf_assoc p1 p2 p3 =
 prop_size_onTopOf :: Hand -> Hand -> Bool
 prop_size_onTopOf hand1 hand2 = (size hand1 + size hand2) == size (hand1 <+ hand2)
 
+--function used to get a full deck containing all ranks from all suits
+--requires no input
 fullDeck :: Hand
 fullDeck = fullSuit Clubs <+ fullSuit Diamonds <+ fullSuit Spades <+ fullSuit Hearts
 
+--function used to get all ranks in a suit in one hand. The input suit is what
+--suit the user wants the ranks to be in
 fullSuit :: Suit -> Hand
 fullSuit suit = Add (Card (Numeric 2) suit)
                   (Add (Card (Numeric 3) suit)
