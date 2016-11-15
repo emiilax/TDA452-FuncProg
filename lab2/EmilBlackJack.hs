@@ -1,7 +1,7 @@
 module BlackJack where
 import Cards
 import RunGame
-import Test.QuickCheck
+import Test.QuickCheck hiding (shuffle)
 import System.Random
 
 -- hand2 = Add (Card (Numeric 2) Hearts) (Add (Card Jack Spades) Empty)
@@ -12,6 +12,20 @@ import System.Random
 --            = 1 + 1 + 0
 --            = 2
 --
+
+implementation = Interface
+  { iEmpty    = empty
+  , iFullDeck = fullDeck
+  , iValue    = value
+  , iGameOver = gameOver
+  , iWinner   = winner
+  , iDraw     = draw
+  , iPlayBank = playBank
+  , iShuffle  = shuffle
+}
+
+main :: IO ()
+main = runGame implementation
 
 empty :: Hand
 empty = Empty
@@ -108,24 +122,28 @@ twoRandomIntegers g = (n1, n2)
         (n2, g2) = randomR (0, 10) g1
 
 
+prop_shuffle_sameCards :: StdGen -> Card -> Hand -> Bool
+prop_shuffle_sameCards g c h =
+    c `belongsTo` h == c `belongsTo` shuffle g h
+
+belongsTo :: Card -> Hand -> Bool
+c `belongsTo` Empty = False
+c `belongsTo` (Add c' h) = c == c' || c `belongsTo` h
+
+prop_size_shuffle :: StdGen -> Hand -> Bool
+prop_size_shuffle g hand = size hand == size (shuffle g hand)
+
 fullD = fullDeck
+-- gameOver: if hand overrites 21, then game is over
+gameOver :: Hand -> Bool
+gameOver hand = value hand > 21
 
-
-hand1 = Add (Card Ace Spades) (Add (Card Ace Spades) (Add (Card (Numeric 3) Spades) Empty))
-hand2 = (Add (Card (Numeric 5) Spades) Empty)
-
-example_card_1 = Card King Clubs
-example_card_2 = Card Ace Spades
-example_card_3 = Card (Numeric 5) Clubs
-
-example_hand_1 = Add example_card_1 Empty
-example_hand_2 = Add example_card_2 example_hand_1
-
-example_hand_3 = Add example_card_3 Empty
---Hand hand1 = (Add (Card Ace Spades) Empty
-
---gameOver :: Hand -> Bool
-
-
-
---winner :: Hand -> Hand -> Player
+-- winner: returns whether the guest or bank wins. It checks who wins by the rules
+--given in assignment "The winner is the player with the highest score that does
+--not exceed 21. If the players end up with the same score, then the bank wins.
+--The bank also wins if both players go bust."
+winner :: Hand -> Hand -> Player
+winner guest bank | gameOver guest = Bank
+                  | gameOver bank = Guest
+                  | value guest <= value bank = Bank
+                  | value guest > value bank = Guest

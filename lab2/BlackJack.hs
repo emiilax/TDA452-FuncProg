@@ -1,7 +1,7 @@
 module BlackJack where
 import           Cards
 import           RunGame
-import           Test.QuickCheck
+import           Test.QuickCheck hiding (shuffle)
 import           System.Random
 
 -- hand2 = Add (Card (Numeric 2) Hearts) (Add (Card Jack Spades) Empty)
@@ -13,13 +13,7 @@ import           System.Random
 --            = 2
 --
 
-example_card_1 = Card King Clubs
-example_card_2 = Card Ace Spades
-example_card_3 = Card (Numeric 5) Clubs
 
-example_hand_1 = Add example_card_1 Empty
-example_hand_2 = Add example_card_2 example_hand_1
-example_hand_3 = Add example_card_3 example_hand_2
 
 --empty: Method that returns an empty hand
 empty :: Hand
@@ -105,7 +99,7 @@ fullSuit suit = Add (Card (Numeric 2) suit)
                                         (Add (Card Ace suit) Empty
                  ))))))))))))
 
-fullSuit suit = (Add (Card (Numeric a)) suit) | a <- [2..10]
+
 
 draw :: Hand -> Hand -> (Hand, Hand)
 draw Empty hand = error "draw: The deck is empty."
@@ -119,7 +113,10 @@ playBank' deck bankHand | value bankHand < 16 = playBank' deck' bankHand'
   where (deck',bankHand') = draw deck bankHand
 playBank' deck bankHand = bankHand
 
-
+-- function used to shuffle a hand. The input is a StdGen and a Hand
+--
+--
+--
 shuffle :: StdGen -> Hand -> Hand
 shuffle _ Empty = Empty
 shuffle g hand = Add rcard(shuffle g (newDeck rcard hand))
