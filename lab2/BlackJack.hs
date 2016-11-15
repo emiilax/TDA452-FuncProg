@@ -120,8 +120,6 @@ fullSuit suit = Add (Card (Numeric 2) suit)
                                         (Add (Card Ace suit) Empty
                  ))))))))))))
 
-fullSuit suit = (Add (Card (Numeric a)) suit) | a <- [2..10]
-
 draw :: Hand -> Hand -> (Hand, Hand)
 draw Empty hand = error "draw: The deck is empty."
 draw (Add card deck) hand = (deck, Add card hand)
@@ -147,3 +145,16 @@ getCard n (Add card hand) = getCard(n-1) hand
 newDeck :: Card -> Hand -> Hand
 newDeck c1 (Add c2 hand) | c1 == c2 = hand
 newDeck c1 (Add c2 hand) = Add c2 (newDeck c1 hand)
+
+twoRandomIntegers :: StdGen -> (Integer,Integer)
+twoRandomIntegers g = (n1, n2)
+  where (n1, g1) = randomR (0, 10) g
+        (n2, g2) = randomR (0, 10) g1
+
+prop_shuffle_sameCards :: StdGen -> Card -> Hand -> Bool
+prop_shuffle_sameCards g c h =
+    c `belongsTo` h == c `belongsTo` shuffle g h
+
+belongsTo :: Card -> Hand -> Bool
+c `belongsTo` Empty = False
+c `belongsTo` (Add c' h) = c == c' || c `belongsTo` h
