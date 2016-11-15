@@ -1,4 +1,4 @@
-module BlackJack where
+mermodule BlackJack where
 import           Cards
 import           RunGame
 import           Test.QuickCheck
@@ -104,6 +104,8 @@ fullSuit suit = (Add (Card (Numeric 2) suit)
                 (Add (Card King suit)
                 (Add (Card Ace suit) Empty
                  )))))))))))))
+
+--fullSuit suit = (Add (Card (Numeric a)) suit) | a <- [2..10]
 
 draw :: Hand -> Hand -> (Hand, Hand)
 draw Empty hand = error "draw: The deck is empty."
