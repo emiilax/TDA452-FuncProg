@@ -1,7 +1,8 @@
 module BlackJack where
-import           Cards
-import           RunGame
+import Cards
+import RunGame
 import Test.QuickCheck
+import System.Random
 
 -- hand2 = Add (Card (Numeric 2) Hearts) (Add (Card Jack Spades) Empty)
 --
@@ -97,6 +98,29 @@ prop_onTopOf_assoc p1 p2 p3 =
 
 prop_size_onTopOf :: Hand -> Hand -> Bool
 prop_size_onTopOf hand1 hand2 = (size hand1 + size hand2) == size (hand1 <+ hand2)
+
+shuffle1 :: StdGen -> Hand -> Hand
+shuffle1 _ Empty = Empty
+shuffle1 g hand = Add rcard (shuffle1 g (newDeck rcard hand))
+    where rcard = getCard (fst(randomR (0, (size hand-1)) g)) hand
+
+
+
+
+newDeck :: Card -> Hand -> Hand
+newDeck c1 (Add c2 hand) | c1 == c2 = hand
+newDeck c1 (Add c2 hand) = Add c2 (newDeck c1 hand)
+
+getCard :: Integer -> Hand -> Card
+getCard 0 (Add card hand) = card
+getCard n (Add card hand) = getCard (n-1) hand
+
+
+twoRandomIntegers :: StdGen -> (Integer,Integer)
+twoRandomIntegers g = (n1, n2)
+  where (n1, g1) = randomR (0, 10) g
+        (n2, g2) = randomR (0, 10) g1
+
 
 fullD = fullDeck
 
