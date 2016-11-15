@@ -26,7 +26,6 @@ empty :: Hand
 empty = Empty
 
 
-
 -- value: calculates the value of a given hand. If the hand consist Aces, the
 -- function check whether the hand consist more than two Aces or if the hand
 -- without the Aces are more then 10. In that case, Aces are worth 1 otherwise 11
@@ -36,20 +35,6 @@ value hand | (numberOfAces hand) == 1 && value (removeAces hand) <  11 = value (
            | (numberOfAces hand) == 1 && value (removeAces hand) >= 11 = value (removeAces hand) + numberOfAces hand
            | (numberOfAces hand) >  1 = value (removeAces hand) + numberOfAces hand
 value (Add card hand) = valueCard card + value hand
-
-
-
-
-
---Change "value" and "removeAces" to this?
---
---value :: Hand -> Integer
---value hand | (valueMinusAces hand > 10) || (nbrOfAces hand > 1) = valueMinusAces hand + nbrOfAces hand
---value hand = (valueMinusAces hand) + nbrOfAces hand * 11
-
---valueMinusAces :: Hand -> Integer
---valueMinusAces Empty = 0
---valueMinusAces (Add (Card r s) hand) = rankValue r + valueMinusAces hand
 
 -- valueCard: returns the value of a card. Uses valueRank to calculate
 valueCard :: Card -> Integer

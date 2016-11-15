@@ -39,19 +39,6 @@ Empty <+ hand2 = hand2
 hand1 <+ Empty = hand1
 (Add card hand1) <+ (hand2) = Add card (hand1 <+ hand2)
 
-listOfRank :: [Rank]
-listOfRank = [(Numeric 2),
-              (Numeric 3),
-              (Numeric 4),
-              (Numeric 5),
-              (Numeric 6),
-              (Numeric 7),
-              (Numeric 8),
-              Jack,
-              Queen,
-              King,
-              Ace]
-
 fullDeck :: Hand
 fullDeck = fullSuit Clubs <+ fullSuit Diamonds <+ fullSuit Spades <+ fullSuit Hearts
 
@@ -99,12 +86,11 @@ prop_onTopOf_assoc p1 p2 p3 =
 prop_size_onTopOf :: Hand -> Hand -> Bool
 prop_size_onTopOf hand1 hand2 = (size hand1 + size hand2) == size (hand1 <+ hand2)
 
-shuffle1 :: StdGen -> Hand -> Hand
-shuffle1 _ Empty = Empty
-shuffle1 g hand = Add rcard (shuffle1 g (newDeck rcard hand))
-    where rcard = getCard (fst(randomR (0, (size hand-1)) g)) hand
-
-
+shuffle :: StdGen -> Hand -> Hand
+shuffle _ Empty = Empty
+shuffle g hand = Add rcard (shuffle g1 (newDeck rcard hand))
+    where (pos, g1) = randomR (0, (size hand-1)) g
+          rcard = getCard pos hand
 
 
 newDeck :: Card -> Hand -> Hand
