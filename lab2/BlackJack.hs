@@ -113,19 +113,21 @@ playBank' deck bankHand | value bankHand < 16 = playBank' deck' bankHand'
   where (deck',bankHand') = draw deck bankHand
 playBank' deck bankHand = bankHand
 
--- function used to shuffle a hand. The input is a StdGen and a Hand
---
---
---
+-- function used to shuffle a hand. The input is a StdGen and a Hand. The function
+-- the function creates a new hand and returns that. It puts a random card from
+-- the initial Hand, into the top of the new deck. Then recursivly does it on the
+-- rest of the hand until its empty. Uses getCard with a random integer to get a
+-- random card from the hand and then removes the card from the deck with removeCardFromDeck
 shuffle :: StdGen -> Hand -> Hand
 shuffle _ Empty = Empty
-shuffle g hand = Add rcard(shuffle g (newDeck rcard hand))
+shuffle g hand = Add rcard(shuffle g (removeCardFromDeck rcard hand))
     where rcard = getCard (fst(randomR (0, (size hand-1)) g)) hand
+
 
 getCard :: Integer -> Hand -> Card
 getCard 0 (Add card hand) = card
 getCard n (Add card hand) = getCard(n-1) hand
 
-newDeck :: Card -> Hand -> Hand
-newDeck c1 (Add c2 hand) | c1 == c2 = hand
-newDeck c1 (Add c2 hand) = Add c2 (newDeck c1 hand)
+removeCardFromDeck :: Card -> Hand -> Hand
+removeCardFromDeck c1 (Add c2 hand) | c1 == c2 = hand
+removeCardFromDeck c1 (Add c2 hand) = Add c2 (newDeck c1 hand)
