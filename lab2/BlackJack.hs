@@ -14,11 +14,23 @@ import           System.Random
 --
 
 
+implementation = Interface
+  { iEmpty    = empty
+  , iFullDeck = fullDeck
+  , iValue    = value
+  , iGameOver = gameOver
+  , iWinner   = winner
+  , iDraw     = draw
+  , iPlayBank = playBank
+  , iShuffle  = shuffle
+  }
+
+main :: IO ()
+main = runGame implementation
 
 --empty: Method that returns an empty hand
 empty :: Hand
 empty = Empty
-
 
 -- value: calculates the value of a given hand. If the hand consist Aces, the
 -- function check whether the hand consist more than two Aces or if the hand
@@ -120,7 +132,7 @@ playBank' deck bankHand = bankHand
 -- random card from the hand and then removes the card from the deck with removeCardFromDeck
 shuffle :: StdGen -> Hand -> Hand
 shuffle _ Empty = Empty
-shuffle g hand = Add rcard (shuffle g1 (newDeck rcard hand))
+shuffle g hand = Add rcard (shuffle g1 (removeCardFromDeck rcard hand))
   where (pos, g1) = randomR (0, (size hand-1)) g
         rcard = getCard pos hand
 
@@ -131,7 +143,7 @@ getCard n (Add card hand) = getCard(n-1) hand
 
 removeCardFromDeck :: Card -> Hand -> Hand
 removeCardFromDeck c1 (Add c2 hand) | c1 == c2 = hand
-removeCardFromDeck c1 (Add c2 hand) = Add c2 (newDeck c1 hand)
+removeCardFromDeck c1 (Add c2 hand) = Add c2 (removeCardFromDeck c1 hand)
 
 prop_shuffle_sameCards :: StdGen -> Card -> Hand -> Bool
 prop_shuffle_sameCards g c h =
@@ -140,3 +152,6 @@ prop_shuffle_sameCards g c h =
 belongsTo :: Card -> Hand -> Bool
 c `belongsTo` Empty = False
 c `belongsTo` (Add c' h) = c == c' || c `belongsTo` h
+
+prop_size_shuffle :: StdGen -> Hand -> Bool
+prop_size_shuffle g hand = size hand == size (shuffle g hand)
