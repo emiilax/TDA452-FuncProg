@@ -13,13 +13,19 @@ import           System.Random
 --            = 2
 --
 
-example_card_1 = Card King Clubs
-example_card_2 = Card Ace Spades
-example_card_3 = Card (Numeric 5) Clubs
+implementation = Interface
+  { iEmpty    = empty
+  , iFullDeck = fullDeck
+  , iValue    = value
+  , iGameOver = gameOver
+  , iWinner   = winner
+  , iDraw     = draw
+  , iPlayBank = playBank
+  , iShuffle  = shuffle
+  }
 
-example_hand_1 = Add example_card_1 Empty
-example_hand_2 = Add example_card_2 example_hand_1
-example_hand_3 = Add example_card_3 example_hand_2
+main :: IO ()
+main = runGame implementation
 
 --empty: Method that returns an empty hand
 empty :: Hand
@@ -120,8 +126,9 @@ playBank' deck bankHand = bankHand
 
 shuffle :: StdGen -> Hand -> Hand
 shuffle _ Empty = Empty
-shuffle g hand = Add rcard(shuffle g (newDeck rcard hand))
-    where rcard = getCard (fst(randomR (0, (size hand-1)) g)) hand
+shuffle g hand = Add rcard (shuffle g1 (newDeck rcard hand))
+    where (pos, g1) = randomR (0, (size hand-1)) g
+          rcard = getCard pos hand
 
 getCard :: Integer -> Hand -> Card
 getCard 0 (Add card hand) = card
@@ -143,3 +150,6 @@ prop_shuffle_sameCards g c h =
 belongsTo :: Card -> Hand -> Bool
 c `belongsTo` Empty = False
 c `belongsTo` (Add c' h) = c == c' || c `belongsTo` h
+
+prop_size_shuffle :: StdGen -> Hand -> Bool
+prop_size_shuffle g hand = size (shuffle g hand) == size hand
