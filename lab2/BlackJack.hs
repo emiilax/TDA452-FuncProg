@@ -1,7 +1,8 @@
-mermodule BlackJack where
+module BlackJack where
 import           Cards
 import           RunGame
 import           Test.QuickCheck
+import           System.Random
 
 -- hand2 = Add (Card (Numeric 2) Hearts) (Add (Card Jack Spades) Empty)
 --
@@ -119,7 +120,7 @@ fullSuit suit = Add (Card (Numeric 2) suit)
                                         (Add (Card Ace suit) Empty
                  ))))))))))))
 
---fullSuit suit = (Add (Card (Numeric a)) suit) | a <- [2..10]
+fullSuit suit = (Add (Card (Numeric a)) suit) | a <- [2..10]
 
 draw :: Hand -> Hand -> (Hand, Hand)
 draw Empty hand = error "draw: The deck is empty."
@@ -132,3 +133,17 @@ playBank' :: Hand -> Hand -> Hand
 playBank' deck bankHand | value bankHand < 16 = playBank' deck' bankHand'
   where (deck',bankHand') = draw deck bankHand
 playBank' deck bankHand = bankHand
+
+
+shuffle :: StdGen -> Hand -> Hand
+shuffle _ Empty = Empty
+shuffle g hand = Add rcard(shuffle g (newDeck rcard hand))
+    where rcard = getCard (fst(randomR (0, (size hand-1)) g)) hand
+
+getCard :: Integer -> Hand -> Card
+getCard 0 (Add card hand) = card
+getCard n (Add card hand) = getCard(n-1) hand
+
+newDeck :: Card -> Hand -> Hand
+newDeck c1 (Add c2 hand) | c1 == c2 = hand
+newDeck c1 (Add c2 hand) = Add c2 (newDeck c1 hand)
