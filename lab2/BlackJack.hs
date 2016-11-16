@@ -118,36 +118,44 @@ fullSuit suit = Add (Card (Numeric 2) suit)
                  ))))))))))))
 
 
-
+-- draws a card from the first hand, and then add it to the other hand. After that
+-- the function reurns both the hands
 draw :: Hand -> Hand -> (Hand, Hand)
 draw Empty hand = error "draw: The deck is empty."
 draw (Add card deck) hand = (deck, Add card hand)
 
+-- function called to play bank. Uses help funtion playBank' to do the accual drawing
 playBank :: Hand -> Hand
 playBank deck = playBank' deck Empty
 
+-- help function to playBank that does the dawing for the bank. Fills a hand until
+-- the decks value is >= 16
 playBank' :: Hand -> Hand -> Hand
 playBank' deck bankHand | value bankHand < 16 = playBank' deck' bankHand'
   where (deck',bankHand') = draw deck bankHand
 playBank' deck bankHand = bankHand
 
 -- function used to shuffle a hand. The input is a StdGen and a Hand. The function
--- the function creates a new hand and returns that. It puts a random card from
--- the initial Hand, into the top of the new deck. Then recursivly does it on the
--- rest of the hand until its empty. Uses getCard with a random integer to get a
--- random card from the hand and then removes the card from the deck with removeCardFromDeck
+-- creates a new hand and returns that. It puts a random card from the initial Hand,
+-- into the top of the new deck. Then recursivly does it on the rest of the hand
+-- until its empty. Uses getCard with a random integer to get a random card from
+-- the hand and then removes the card from the deck with removeCardFromDeck
 shuffle :: StdGen -> Hand -> Hand
 shuffle _ Empty = Empty
 shuffle g hand = Add rcard (shuffle g1 (removeCardFromDeck rcard hand))
   where (pos, g1) = randomR (0, (size hand-1)) g
         rcard = getCard pos hand
 
-
+-- returns a card at a given place in a hand. Used in shuffle
 getCard :: Integer -> Hand -> Card
+getCard n hand | n > size hand = error "getCard: n bigger then hand size"
 getCard 0 (Add card hand) = card
 getCard n (Add card hand) = getCard(n-1) hand
 
+-- removes a given card from a given hand. After the card is removed, a hand
+-- without the card is returned.
 removeCardFromDeck :: Card -> Hand -> Hand
+removeCardFromDeck c1 Empty = error "removeCardFromDeck: Card not in deck"
 removeCardFromDeck c1 (Add c2 hand) | c1 == c2 = hand
 removeCardFromDeck c1 (Add c2 hand) = Add c2 (removeCardFromDeck c1 hand)
 
