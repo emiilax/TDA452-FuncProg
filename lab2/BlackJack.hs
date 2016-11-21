@@ -97,7 +97,7 @@ prop_size_onTopOf hand1 hand2 = (size hand1 + size hand2) == size (hand1 <+ hand
 --function used to get a full deck containing all ranks from all suits
 --requires no input
 fullDeck :: Hand
-fullDeck = fullSuit1 Clubs <+ fullSuit1 Diamonds <+ fullSuit1 Spades <+ fullSuit1 Hearts
+fullDeck = fullSuit Clubs <+ fullSuit Diamonds <+ fullSuit Spades <+ fullSuit Hearts
 
 --function used to get all ranks in a suit in one hand. The input suit is what
 --suit the user wants the ranks to be in
@@ -110,10 +110,6 @@ fullSuit suit = fullSuit' allRanks suit
 fullSuit' :: [Rank] -> Suit -> Hand
 fullSuit' [] _ = Empty
 fullSuit' (x:xs) suit = Add (Card x suit) (fullSuit' xs suit)
-
---fromList :: [Rank] -> Suit -> Hand
---fromList [] _ = Empty
---fromList (x:xs) suit = Add (Card x suit) (fromList xs suit)
 
 --fullSuit :: Suit -> Hand
 --fullSuit suit = Add (Card (Numeric 2) suit)
@@ -130,6 +126,10 @@ fullSuit' (x:xs) suit = Add (Card x suit) (fullSuit' xs suit)
 --                                      (Add (Card King suit)
 --                                      (Add (Card Ace suit) Empty
 --                 ))))))))))))
+
+fromList:: [Card] -> Hand
+fromList [] = Empty
+fromList (x:xs) = Add x (fromList xs)
 
 
 -- draws a card from the first hand, and then add it to the other hand. After that
@@ -157,14 +157,15 @@ playBank' deck bankHand = bankHand
 shuffle :: StdGen -> Hand -> Hand
 shuffle _ Empty = Empty
 shuffle g hand = Add rcard (shuffle g1 (removeCardFromDeck rcard hand))
-  where (pos, g1) = randomR (0, (size hand-1)) g
+  where (pos, g1) = randomR (1, (size hand-1)) g
         rcard = getCard pos hand
 
 -- returns a card at a given place in a hand. Used in shuffle
 getCard :: Integer -> Hand -> Card
-getCard n hand | n > size hand = error "getCard: n bigger then hand size"
-getCard 0 (Add card hand) = card
-getCard n (Add card hand) = getCard(n-1) hand
+getCard n hand | n > size hand = error "getCard: n is bigger than hand"
+               | n <= 0 = error "getCard: n can't be less or equal to 0"
+getCard n (Add card hand) |(n-1) == 0 = card
+                          |otherwise = getCard(n-1) hand
 
 -- removes a given card from a given hand. After the card is removed, a hand
 -- without the card is returned.
