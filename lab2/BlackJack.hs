@@ -97,7 +97,7 @@ prop_size_onTopOf hand1 hand2 = (size hand1 + size hand2) == size (hand1 <+ hand
 --function used to get a full deck containing all ranks from all suits
 --requires no input
 fullDeck :: Hand
-fullDeck = fullSuit1 Clubs <+ fullSuit1 Diamonds <+ fullSuit1 Spades <+ fullSuit1 Hearts
+fullDeck = fullSuit Clubs <+ fullSuit Diamonds <+ fullSuit Spades <+ fullSuit Hearts
 
 --function used to get all ranks in a suit in one hand. The input suit is what
 --suit the user wants the ranks to be in
@@ -110,6 +110,17 @@ fullSuit suit = fullSuit' allRanks suit
 fullSuit' :: [Rank] -> Suit -> Hand
 fullSuit' [] _ = Empty
 fullSuit' (x:xs) suit = Add (Card x suit) (fullSuit' xs suit)
+
+fullSuit2 :: Suit -> Hand
+fullSuit2 suit = cardsToHand (listCardsInSuit suit)
+
+listCardsInSuit :: Suit -> [Card]
+listCardsInSuit suit = [(Card (Numeric a) suit) | a <- [2..10]] ++
+                 [(Card rank suit) | rank <-[Jack, Queen, King, Ace]]
+
+cardsToHand :: [Card] -> Hand
+cardsToHand []     = Empty
+cardsToHand (x:xs) = Add x (cardsToHand xs)
 
 --fromList :: [Rank] -> Suit -> Hand
 --fromList [] _ = Empty
