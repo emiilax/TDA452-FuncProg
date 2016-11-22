@@ -87,7 +87,7 @@ get3By3 list = [concat(take 3 tList)] ++
   where tList = transpose list
 
 isOkay :: Sudoku -> Bool
-isOkay sudoku = isSudoku && checkAllBlocks (blocks sudoku)
+isOkay sudoku = isSudoku sudoku && checkAllBlocks (blocks sudoku)
 
 checkAllBlocks :: [Block] -> Bool
 checkAllBlocks [] = True
