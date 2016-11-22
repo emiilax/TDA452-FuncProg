@@ -134,7 +134,7 @@ draw (Add card deck) hand = (deck, Add card hand)
 playBank :: Hand -> Hand
 playBank deck = playBank' deck Empty
 
--- help function to playBank that does the dawing for the bank. Fills a hand until
+-- help function to playBank that does the drawing for the bank. Fills a hand until
 -- the decks value is >= 16
 playBank' :: Hand -> Hand -> Hand
 playBank' deck bankHand | value bankHand < 16 = playBank' deck' bankHand'

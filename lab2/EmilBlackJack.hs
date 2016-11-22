@@ -53,24 +53,16 @@ Empty <+ hand2 = hand2
 hand1 <+ Empty = hand1
 (Add card hand1) <+ (hand2) = Add card (hand1 <+ hand2)
 
-fullDeck :: Hand
-fullDeck = fullSuit Clubs <+ fullSuit Diamonds <+ fullSuit Spades <+ fullSuit Hearts
+fullSuit2 :: Suit -> Hand
+fullSuit2 suit = cardsToHand (listCardsInSuit suit)
 
-fullSuit :: Suit -> Hand
-fullSuit suit = (Add (Card (Numeric 2) suit)
-                (Add (Card (Numeric 3) suit)
-                (Add (Card (Numeric 4) suit)
-                (Add (Card (Numeric 5) suit)
-                (Add (Card (Numeric 6) suit)
-                (Add (Card (Numeric 7) suit)
-                (Add (Card (Numeric 8) suit)
-                (Add (Card (Numeric 9) suit)
-                (Add (Card (Numeric 10) suit)
-                (Add (Card Jack suit)
-                (Add (Card Queen suit)
-                (Add (Card King suit)
-                (Add (Card Ace suit) Empty
-                 )))))))))))))
+listCardsInSuit :: Suit -> [Card]
+listCardsInSuit suit = [(Card (Numeric a) suit) | a <- [2..10]] ++
+                 [(Card rank suit) | rank <-[Jack, Queen, King, Ace]]
+
+cardsToHand :: [Card] -> Hand
+cardsToHand []     = Empty
+cardsToHand (x:xs) = Add x (cardsToHand xs)
 
 draw :: Hand -> Hand -> (Hand, Hand)
 draw Empty hand = error "draw: The deck is empty."

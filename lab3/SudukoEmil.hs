@@ -34,7 +34,8 @@ isRowsSolved (x:xs) | Nothing `elem` x = False
 
 printSudoku :: Sudoku -> IO ()
 printSudoku (Sudoku []) = putStr ""
-printSudoku (Sudoku l) = putStr(createSudokuString l)
+printSudoku (Sudoku l) | isSudoku (Sudoku l) = putStr(createSudokuString l)
+                       | otherwise =  error "printSudoku: Not a Sudoku"
 
 createSudokuString:: [[Maybe Int]] -> String
 createSudokuString [] = ""
@@ -46,7 +47,7 @@ rowString [] = ""
 rowString (x:xs) | isNothing x = "." ++ rowString xs
 rowString (Just n:xs) = show n ++ rowString xs
 
-
+--An example sudoku for testing
 example :: Sudoku
 example =
   Sudoku
