@@ -24,7 +24,14 @@ isSudoku (Sudoku rows) = length rows == 9 && isSudokuColumns rows
 -- rows has the lenght 9
 isSudokuColumns :: [[Maybe Int]] -> Bool
 isSudokuColumns [] = True
-isSudokuColumns (x:xs) = length x == 9 && isSudokuColumns xs
+isSudokuColumns (x:xs) = length x == 9 && isCorrectValue x && isSudokuColumns xs
+
+--checks that every value in a row is between 1 - 9 or nothing
+isCorrectValue :: [Maybe Int] -> Bool
+isCorrectValue [] = True
+isCorrectValue (Nothing:xs) = isCorrectValue xs
+isCorrectValue ((Just x):xs) | x > 0 && x < 10 = isCorrectValue xs
+                             | otherwise = False
 
 -- checks weather the sudoku is "solved" or not. a sudoku is solved if its a
 -- sudoku and no cell contains "Nothing" (uses isRowsSolved to determine if the
@@ -135,7 +142,7 @@ allBlocksOk (x:xs) = isOkayBlock x && allBlocksOk xs
 example :: Sudoku
 example =
   Sudoku
-    [ [Just 3, Just 6, Nothing,Nothing,Just 7, Just 1, Just 2, Nothing,Nothing]
+    [ [Just 3, Just 6, Nothing,Nothing,Just 7, Just 5, Just 2, Nothing,Nothing]
     , [Nothing,Just 5, Nothing,Nothing,Nothing,Nothing,Just 1, Just 8, Nothing]
     , [Nothing,Nothing,Just 9, Just 2, Nothing,Just 4, Just 7, Nothing,Nothing]
     , [Nothing,Nothing,Nothing,Nothing,Just 1, Just 3, Nothing,Just 2, Just 8]
