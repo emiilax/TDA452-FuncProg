@@ -37,14 +37,16 @@ empty = Empty
 -- without the Aces are more then 10. In that case, Aces are worth 1 otherwise 11
 value :: Hand -> Integer
 value Empty = 0
-value hand | (numberOfAces hand) == 1 && value (removeAces hand) <  11 = value (removeAces hand) + 11
-           | (numberOfAces hand) == 1 && value (removeAces hand) >= 11 = value (removeAces hand) + numberOfAces hand
-           | (numberOfAces hand) >  1 = value (removeAces hand) + numberOfAces hand
+value hand | numberAces == 1 && valueNoAces < 11 = valueNoAces + 11
+           | numberAces >= 1                     = valueNoAces + numberAces
+  where
+    numberAces  = numberOfAces hand
+    valueNoAces = value (removeAces hand)
 value (Add card hand) = valueCard card + value hand
 
 -- valueCard: returns the value of a card. Uses valueRank to calculate
 valueCard :: Card -> Integer
-valueCard (Card r s) = valueRank r
+valueCard (Card r _) = valueRank r
 
 -- valueRanks: returns the value of the rank. Returns 0 if Ace, since we add
 -- them in method "value" instead
@@ -57,15 +59,15 @@ valueRank _            = 10
 -- without any Aces
 removeAces :: Hand -> Hand
 removeAces Empty = Empty
-removeAces (Add (Card r s) hand) | r == Ace = removeAces hand
+removeAces (Add (Card Ace _) hand) = removeAces hand
 removeAces (Add (Card r s) hand) = Add (Card r s) (removeAces hand)
 
 -- numberOfAces: calculates the numberOfAces in a hand. If there is an ace, add 1,
 -- otherwise 0 and continue until hand is empty
 numberOfAces :: Hand -> Integer
 numberOfAces Empty = 0
-numberOfAces (Add (Card rank suit) hand) | rank == Ace = 1 + numberOfAces hand
-numberOfAces (Add (Card rank suit) hand) = numberOfAces hand
+numberOfAces (Add (Card Ace _) hand) = 1 + numberOfAces hand
+numberOfAces (Add (Card _ _) hand) = numberOfAces hand
 
 -- gameOver: if hand overrites 21, then game is over
 gameOver :: Hand -> Bool
