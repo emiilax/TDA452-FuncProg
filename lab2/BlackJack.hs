@@ -99,34 +99,26 @@ prop_size_onTopOf hand1 hand2 = (size hand1 + size hand2) == size (hand1 <+ hand
 fullDeck :: Hand
 fullDeck = fullSuit Clubs <+ fullSuit Diamonds <+ fullSuit Spades <+ fullSuit Hearts
 
---function used to get all ranks in a suit in one hand. The input suit is what
---suit the user wants the ranks to be in
 
+
+-- list containing all ranks, used in fullsuit
 allRanks = [Numeric n | n<-[2..10]] ++ [Jack, Queen, King, Ace]
 
+--function used to get all ranks in a suit in one hand. The input suit is what
+--suit the user wants the ranks to be in. This function uses a helpfunction
+--fullsuit' which has input list[rank] and suit. The list that is used for
+-- inpu is "allRanks"
 fullSuit :: Suit -> Hand
 fullSuit suit = fullSuit' allRanks suit
 
+-- helpfunction to fullsuit. goes through a list of ranks and creates a hand
+-- containg all the ranks with a specific suit
 fullSuit' :: [Rank] -> Suit -> Hand
 fullSuit' [] _ = Empty
 fullSuit' (x:xs) suit = Add (Card x suit) (fullSuit' xs suit)
 
---fullSuit :: Suit -> Hand
---fullSuit suit = Add (Card (Numeric 2) suit)
---                  (Add (Card (Numeric 3) suit)
---                    (Add (Card (Numeric 4) suit)
---                      (Add (Card (Numeric 5) suit)
---                        (Add (Card (Numeric 6) suit)
---                          (Add (Card (Numeric 7) suit)
---                            (Add (Card (Numeric 8) suit)
---                              (Add (Card (Numeric 9) suit)
---                                (Add (Card (Numeric 10) suit)
---                                  (Add (Card Jack suit)
---                                    (Add (Card Queen suit)
---                                      (Add (Card King suit)
---                                      (Add (Card Ace suit) Empty
---                 ))))))))))))
 
+-- used to create hands easier--
 fromList:: [Card] -> Hand
 fromList [] = Empty
 fromList (x:xs) = Add x (fromList xs)
