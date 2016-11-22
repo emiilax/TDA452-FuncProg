@@ -111,36 +111,9 @@ fullSuit' :: [Rank] -> Suit -> Hand
 fullSuit' [] _ = Empty
 fullSuit' (x:xs) suit = Add (Card x suit) (fullSuit' xs suit)
 
-fullSuit2 :: Suit -> Hand
-fullSuit2 suit = cardsToHand (listCardsInSuit suit)
-
-listCardsInSuit :: Suit -> [Card]
-listCardsInSuit suit = [(Card (Numeric a) suit) | a <- [2..10]] ++
-                 [(Card rank suit) | rank <-[Jack, Queen, King, Ace]]
-
-cardsToHand :: [Card] -> Hand
-cardsToHand []     = Empty
-cardsToHand (x:xs) = Add x (cardsToHand xs)
-
 --fromList :: [Rank] -> Suit -> Hand
 --fromList [] _ = Empty
 --fromList (x:xs) suit = Add (Card x suit) (fromList xs suit)
-
---fullSuit :: Suit -> Hand
---fullSuit suit = Add (Card (Numeric 2) suit)
---                  (Add (Card (Numeric 3) suit)
---                    (Add (Card (Numeric 4) suit)
---                      (Add (Card (Numeric 5) suit)
---                        (Add (Card (Numeric 6) suit)
---                          (Add (Card (Numeric 7) suit)
---                            (Add (Card (Numeric 8) suit)
---                              (Add (Card (Numeric 9) suit)
---                                (Add (Card (Numeric 10) suit)
---                                  (Add (Card Jack suit)
---                                    (Add (Card Queen suit)
---                                      (Add (Card King suit)
---                                      (Add (Card Ace suit) Empty
---                 ))))))))))))
 
 
 -- draws a card from the first hand, and then add it to the other hand. After that
@@ -153,7 +126,7 @@ draw (Add card deck) hand = (deck, Add card hand)
 playBank :: Hand -> Hand
 playBank deck = playBank' deck Empty
 
--- help function to playBank that does the dawing for the bank. Fills a hand until
+-- help function to playBank that does the drawing for the bank. Fills a hand until
 -- the decks value is >= 16
 playBank' :: Hand -> Hand -> Hand
 playBank' deck bankHand | value bankHand < 16 = playBank' deck' bankHand'
