@@ -164,12 +164,20 @@ prop_blank :: Sudoku -> Bool
 prop_blank sud = isBlank sud (blanks sud)
 
 (!!=) :: [a] -> (Int, a) -> [a]
-(!!=) x (pos,_) | length x < pos = error "(!!=) index bigger than list"
+(!!=) x (pos,_) | length x < pos = error "(!!=) index bigger than list length"
                 | pos < 0        = error "(!!= negative index)"
 (!!=) x (pos, a) = take pos x ++ [a] ++ drop (pos+1) x
 
 update :: Sudoku -> Pos -> Maybe Int -> Sudoku
-update (Sudoku sudoku) (row,col) value = (Sudoku (sudoku !!= (row,((sudoku !! row) !!= (col,value)))))
+update (Sudoku sudoku) (row,col) value = Sudoku (sudoku !!= (row,((sudoku !! row) !!= (col,value))))
+
+candidates :: Sudoku -> Pos -> [Int]
+candidates sudoku pos = candidates' [1..9] sudoku pos
+
+candidates' :: [Int] -> Sudoku -> Pos -> [Int]
+candidates' [] _ _            = []
+candidates' (x:xs) sudoku pos | isOkay(update sudoku pos (Just x)) = x : candidates' xs sudoku pos
+                              | otherwise = candidates' xs sudoku pos
 
 example :: Sudoku
 example =
