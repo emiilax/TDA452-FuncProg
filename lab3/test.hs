@@ -4,7 +4,6 @@ import Data.Maybe
 import Prelude
 import Data.Char
 import Test.QuickCheck
-import Debug.Trace
 
 data Sudoku = Sudoku { rows :: [[Maybe Int]] }
   deriving(Show)
@@ -141,20 +140,17 @@ allBlocksOk (x:xs) = isOkayBlock x && allBlocksOk xs
 
 type Pos = (Int,Int)
 
-
 blanks :: Sudoku -> [Pos]
-blanks (Sudoku l) = getBlankPos 0 l
+blanks (Sudoku sud) = getBlankRow 0 sud
 
-getBlankPos :: Int -> [[Maybe Int]] -> [Pos]
-getBlankPos _ [] = []
-getBlankPos n (x:xs) = getBlankElem n 0 x ++ getBlankPos (n+1) xs
+getBlankRow :: Int -> [[Maybe Int]] -> [Pos]
+getBlankRow _ [] = []
+getBlankRow r (x:xs) = getBlankCell r 0 x ++ getBlankRow(r+1) xs
 
-
-getBlankElem :: Int -> Int -> [Maybe Int] -> [Pos]
-getBlankElem _ _ [] = []
-getBlankElem r c (Nothing:xs) = (r,c) : getBlankElem r (c+1) xs
-getBlankElem r c (x:xs) = getBlankElem r (c+1) xs
-
+getBlankCell :: Int -> Int -> [Maybe Int] -> [Pos]
+getBlankCell _ _ [] = []
+getBlankCell r c (Nothing:xs) = (r,c) : getBlankCell r (c+1) xs
+getBlankCell r c (x:xs) = getBlankCell r (c+1) xs
 
 isBlank :: Sudoku -> [Pos] -> Bool
 isBlank (Sudoku l) pos = posIsBlank l pos
@@ -167,63 +163,36 @@ posIsBlank l (x:xs) = ((l !! row) !! column) == Nothing && posIsBlank l xs
 prop_blank :: Sudoku -> Bool
 prop_blank sud = isBlank sud (blanks sud)
 
-
-(!!=) :: [a] -> (Int,a) -> [a]
-(!!=) x (pos,_) | length x < pos = error "(!!=): index to big"
-                | pos < 0        = error "(!!=): pos can't be negative"
-(!!=) x (pos,val) = take pos x ++ [val] ++ drop (pos + 1) x
-
-------------------------------------------------
--- TODO do it in another way. do propertycheck--
-------------------------------------------------
-prop_addElement :: Eq a => [a] -> (Int, a) -> Bool
-prop_addElement a (pos, val) = val == (b !! pos)
-  where b = a !!= (pos, val)
+(!!=) :: [a] -> (Int, a) -> [a]
+(!!=) x (pos,_) | length x < pos = error "(!!=) index bigger than list length"
+                | pos < 0        = error "(!!= negative index)"
+(!!=) x (pos, a) = take pos x ++ [a] ++ drop (pos+1) x
 
 update :: Sudoku -> Pos -> Maybe Int -> Sudoku
-update (Sudoku l) pos n = Sudoku (update' l pos n)
-
-update' :: [[Maybe Int]] -> Pos -> Maybe Int -> [[Maybe Int]]
-update' (x:xs) (0,col) n = x !!= (col, n) : xs
-update' (x:xs) (row,col) n = x : update' xs (row-1, col) n
-
----------------------------------------------------------------
---TODO Property for update. Check so that it has been updated--
----------------------------------------------------------------
+update (Sudoku sudoku) (row,col) value = Sudoku (sudoku !!= (row,((sudoku !! row) !!= (col,value))))
 
 candidates :: Sudoku -> Pos -> [Int]
-candidates = candidates' 9
+candidates sudoku pos = candidates' [1..9] sudoku pos
 
-candidates' :: Int -> Sudoku -> Pos -> [Int]
-candidates' 0 _ _ = []
-candidates' n sud pos | isOkay (update sud pos (Just n)) = n : candidates' (n-1) sud pos
-                      | otherwise = candidates' (n-1) sud pos
-
-
+candidates' :: [Int] -> Sudoku -> Pos -> [Int]
+candidates' [] _ _            = []
+candidates' (x:xs) sudoku pos | isOkay(update sudoku pos (Just x)) = x : candidates' xs sudoku pos
+                              | otherwise = candidates' xs sudoku pos
 
 solve :: Sudoku -> Maybe Sudoku
-solve sud | not (isOkay sud) = Nothing
-solve sud = solve' sud (blanks sud)
+solve sud | isOkay sud = solve' sud (blanks sud)
+          | otherwise = Nothing
 
 solve' :: Sudoku -> [Pos] -> Maybe Sudoku
-solve' sud [] = Just sud
-solve' sud (x:xs) = tryCandidate sud x can
-  where can = candidates sud x
+solve' sudoku [] = Just sudoku
+solve' sudoku (x:xs) = (solveCand sudoku x (candidates sudoku x))
 
-
-tryCandidate :: Sudoku -> Pos -> [Int] -> Maybe Sudoku
-tryCandidate _ _ [] = Nothing
-tryCandidate sud pos (x:xs) | isNothing solveNext = tryCandidate sud pos xs
-                            | otherwise = solveNext
-  where updated = update sud pos (Just x)
-        solveNext = solve updated
-
-readAndSolve :: FilePath -> IO ()
-readAndSolve file = do s <- readSudoku file
-                       let sud = solve s
-                       case sud of Nothing -> putStrLn "Fuck no"
-                                   _       -> printSudoku (fromJust sud)
-
+solveCand :: Sudoku -> Pos -> [Int] -> Maybe Sudoku
+solveCand _ _ []               = Nothing
+solveCand sudoku x (y:ys) | isNothing solveNext = solveCand sudoku x ys
+                               | otherwise = solveNext
+  where upSud = update sudoku x (Just y)
+        solveNext = solve upSud
 
 example :: Sudoku
 example =
