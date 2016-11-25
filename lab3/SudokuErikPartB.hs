@@ -196,6 +196,11 @@ solveCand sudoku (x:xs) (y:ys) | isNothing solveNext = solveCand sudoku (x:xs) y
   where upSud = update sudoku x (Just y)
         solveNext = solve' upSud xs
 
+readAndSolve :: FilePath -> IO ()
+readAndSolve file | isNothing sud = putStrLn "No solution"
+                  | otherwise = printSudoku(fromJust(sud))
+  where sud = solve (readSudoku file)
+
 example :: Sudoku
 example =
   Sudoku
