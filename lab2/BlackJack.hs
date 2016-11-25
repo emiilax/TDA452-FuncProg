@@ -150,23 +150,22 @@ playBank' deck bankHand = bankHand
 -- the hand and then removes the card from the deck with removeCardFromDeck
 shuffle :: StdGen -> Hand -> Hand
 shuffle _ Empty = Empty
-shuffle g hand = Add rcard (shuffle g1 (removeCardFromDeck rcard hand))
-  where (pos, g1) = randomR (1, (size hand-1)) g
+shuffle g hand = Add rcard (shuffle g1 (removeCardFromDeck pos hand))
+  where (pos, g1) = randomR (0, (size hand-1)) g
         rcard = getCard pos hand
 
 -- returns a card at a given place in a hand. Used in shuffle
 getCard :: Integer -> Hand -> Card
 getCard n hand | n > size hand = error "getCard: n is bigger than hand"
-               | n <= 0 = error "getCard: n can't be less or equal to 0"
-getCard n (Add card hand) |(n-1) == 0 = card
+               | n < 0 = error "getCard: n can't be less than 0"
+getCard n (Add card hand) |n == 0 = card
                           |otherwise = getCard(n-1) hand
 
--- removes a given card from a given hand. After the card is removed, a hand
+-- removes a card from a given position in a hand. After the card is removed, a hand
 -- without the card is returned.
-removeCardFromDeck :: Card -> Hand -> Hand
-removeCardFromDeck c1 Empty = error "removeCardFromDeck: Card not in deck"
-removeCardFromDeck c1 (Add c2 hand) | c1 == c2 = hand
-removeCardFromDeck c1 (Add c2 hand) = Add c2 (removeCardFromDeck c1 hand)
+removeCardFromDeck :: Integer -> Hand -> Hand
+removeCardFromDeck 0 (Add c2 hand) = hand
+removeCardFromDeck n (Add c2 hand) = Add c2 (removeCardFromDeck (n-1) hand)
 
 prop_shuffle_sameCards :: StdGen -> Card -> Hand -> Bool
 prop_shuffle_sameCards g c h =

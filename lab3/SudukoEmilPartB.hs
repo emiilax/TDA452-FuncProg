@@ -200,6 +200,24 @@ candidates' n sud pos | isOkay (update sud pos (Just n)) = n : candidates' (n-1
 
 
 
+solve :: Sudoku -> Maybe Sudoku
+solve sud | not (isOkay sud) = Nothing
+solve sud = solve' sud (blanks sud)
+
+solve' :: Sudoku -> [Pos] -> Maybe Sudoku
+solve' sud [] = Just sud
+solve' sud (x:xs) | length can == 1 = solve (update sud x (Just (head can)))
+                  | otherwise = solve sud'
+  where can = candidates sud x
+        sud' = tryCandidate sud x (candidates sud x)
+
+tryCandidate :: Sudoku -> Pos -> [Int] -> Maybe Sudoku
+tryCandidate _ _ [] = Nothing
+tryCandidate sud pos (x:xs) | isNothing(solve (update sud pos (Just x))) = tryCandidate sud pos xs
+                            | otherwise = Just (update sud pos (Just x))
+
+
+
 example :: Sudoku
 example =
   Sudoku
