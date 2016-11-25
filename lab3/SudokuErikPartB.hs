@@ -179,6 +179,23 @@ candidates' [] _ _            = []
 candidates' (x:xs) sudoku pos | isOkay(update sudoku pos (Just x)) = x : candidates' xs sudoku pos
                               | otherwise = candidates' xs sudoku pos
 
+solve :: Sudoku -> Maybe Sudoku
+solve sud | isOkay sud = solve' sud (blanks sud)
+          | otherwise = Nothing
+
+solve' :: Sudoku -> [Pos] -> Maybe Sudoku
+solve' sudoku []     | isOkay sudoku = Just sudoku
+                     | otherwise = Nothing
+solve' sudoku (x:xs) = (solveCand sudoku (x:xs) (candidates sudoku x))
+
+solveCand :: Sudoku -> [Pos] -> [Int] -> Maybe Sudoku
+solveCand _ _ []               = Nothing
+solveCand sudoku [] (y:ys)     = Just sudoku
+solveCand sudoku (x:xs) (y:ys) | isNothing solveNext = solveCand sudoku (x:xs) ys
+                               | otherwise = solveNext
+  where upSud = update sudoku x (Just y)
+        solveNext = solve' upSud xs
+
 example :: Sudoku
 example =
   Sudoku
