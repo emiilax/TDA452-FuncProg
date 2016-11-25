@@ -207,7 +207,7 @@ solve sud = solve' sud (blanks sud)
 solve' :: Sudoku -> [Pos] -> Maybe Sudoku
 solve' sud [] = Just sud
 solve' sud (x:xs) | length can == 1 = solve (update sud x (Just (head can)))
-                  | otherwise = solve sud'
+                  | otherwise = solve (fromJust sud')
   where can = candidates sud x
         sud' = tryCandidate sud x (candidates sud x)
 
