@@ -6,7 +6,7 @@ import Data.Char
 import Test.QuickCheck
 
 data Sudoku = Sudoku { rows :: [[Maybe Int]] }
-  deriving(Show)
+  deriving(Show,Eq)
 
 
 -- creates a blank suduko. firsts creates a list with 9 "Nothing", and then
@@ -135,9 +135,6 @@ allBlocksOk :: [Block] -> Bool
 allBlocksOk [] = True
 allBlocksOk (x:xs) = isOkayBlock x && allBlocksOk xs
 
-
-
-
 type Pos = (Int,Int)
 
 blanks :: Sudoku -> [Pos]
@@ -153,11 +150,9 @@ getBlankCell r c (Nothing:xs) = (r,c) : getBlankCell r (c+1) xs
 getBlankCell r c (x:xs) = getBlankCell r (c+1) xs
 
 isBlank :: Sudoku -> [Pos] -> Bool
-isBlank (Sudoku l) pos = posIsBlank l pos
-
-posIsBlank :: [[Maybe Int]] -> [Pos] -> Bool
-posIsBlank _ [] = True
-posIsBlank l (x:xs) = ((l !! row) !! column) == Nothing && posIsBlank l xs
+isBlank _ [] = True
+isBlank (Sudoku l) (x:xs) = isNothing ((l !! row) !! column)
+                            && isBlank (Sudoku l) xs
   where (row,column) = x
 
 prop_blank :: Sudoku -> Bool
@@ -168,8 +163,29 @@ prop_blank sud = isBlank sud (blanks sud)
                 | pos < 0        = error "(!!= negative index)"
 (!!=) x (pos, a) = take pos x ++ [a] ++ drop (pos+1) x
 
+prop_updateElement :: Eq a => [a] -> (Int, a) -> Bool
+prop_updateElement oList (pos, _) | length oList < pos || pos < 0 = True
+prop_updateElement oList (pos, val) = val == (nList !! pos)
+  where nList = oList !!= (pos, val)
+
+validPos :: Pos -> Bool
+validPos (row, col) | row > 8 || col > 8 || row < 0 || col < 0 = False
+                    | otherwise = True
+
 update :: Sudoku -> Pos -> Maybe Int -> Sudoku
+update sud pos (Just value) | not (validPos pos)       = error "udpate: index out of bounds"
+                            | not (isOkay sud)         = error "update: not a sudoku"
+                            | value < 1 || value > 9   = error "update: bad value"
 update (Sudoku sudoku) (row,col) value = Sudoku (sudoku !!= (row,((sudoku !! row) !!= (col,value))))
+
+prop_updateSudoku :: Sudoku -> Pos -> Maybe Int -> Bool
+prop_updateSudoku sud pos _        | not (validPos pos)     = True
+                                   | not(isOkay sud)        = True
+prop_updateSudoku _ _ (Just value) | value < 1 || value > 8 = True
+prop_updateSudoku sudoku pos value = getPosValue (update sudoku pos value) pos == value
+
+getPosValue :: Sudoku -> Pos -> Maybe Int
+getPosValue (Sudoku l) (row,col) = ( l !! row) !! col
 
 candidates :: Sudoku -> Pos -> [Int]
 candidates sudoku pos = candidates' [1..9] sudoku pos
@@ -178,6 +194,15 @@ candidates' :: [Int] -> Sudoku -> Pos -> [Int]
 candidates' [] _ _            = []
 candidates' (x:xs) sudoku pos | isOkay(update sudoku pos (Just x)) = x : candidates' xs sudoku pos
                               | otherwise = candidates' xs sudoku pos
+
+prop_candidates :: Sudoku -> Pos -> Bool
+prop_candidates sudoku pos | not (validPos pos)  = True
+                           | not (isOkay sudoku) = True
+                           | otherwise = prop_candidates' (candidates sudoku pos) sudoku pos
+
+prop_candidates' :: [Int] -> Sudoku -> Pos -> Bool
+prop_candidates' [] _ _ = True
+prop_candidates' (x:xs) sudoku pos = isOkay(update sudoku pos (Just x)) && prop_candidates' xs sudoku pos
 
 solve :: Sudoku -> Maybe Sudoku
 solve sud | isOkay sud = solve' sud (blanks sud)
@@ -196,10 +221,26 @@ solveCand sudoku (x:xs) (y:ys) | isNothing solveNext = solveCand sudoku (x:xs) y
   where upSud = update sudoku x (Just y)
         solveNext = solve' upSud xs
 
+
 readAndSolve :: FilePath -> IO ()
-readAndSolve file | isNothing sud = putStrLn "No solution"
-                  | otherwise = printSudoku(fromJust(sud))
-  where sud = solve (readSudoku file)
+readAndSolve file = do s <- readSudoku file
+                       let sud = solve s
+                       case sud of Nothing -> putStrLn "empty suduko"
+                                   _       -> printSudoku (fromJust sud)
+
+isSolutionOf :: Sudoku -> Sudoku -> Bool
+isSolutionOf sud1 sud2 | not(isOkay sud1) || not(isOkay sud2) = False
+                       | isNothing solution = False
+                       | otherwise = sud1 == fromJust (solution)
+  where solution = solve sud2
+
+prop_SolveSound :: Sudoku -> Property
+prop_SolveSound sud | isNothing (solved) = discard
+                    | otherwise = isOkay(fromJust(solved)) ==> (fromJust(solved)) `isSolutionOf` sud
+    where solved = solve sud
+
+fewerChecks prop = quickCheckWith stdArgs{ maxSuccess = 30 } prop
+
 
 example :: Sudoku
 example =

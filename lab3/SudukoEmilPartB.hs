@@ -252,7 +252,7 @@ readAndSolve file = do s <- readSudoku file
 
 
 isSolutionOf :: Sudoku -> Sudoku -> Bool
-isSolutionOf sud1 sud2 = sud1 == fromJust (solve sud2 )
+isSolutionOf sud1 sud2 = sud1 == fromJust (solve sud2)
 
 example :: Sudoku
 example =
