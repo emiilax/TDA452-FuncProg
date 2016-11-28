@@ -138,8 +138,9 @@ allBlocksOk (x:xs) = isOkayBlock x && allBlocksOk xs
 
 
 
+
 -- Type for the position in the sudoku
-type Pos = (Int,Int)
+type Pos = (Int,Int )
 
 
 rPos :: Gen Pos
@@ -190,18 +191,14 @@ prop_blank sud = isBlank sud (blanks sud)
 -- TODO fungerar ej
 ------------------------------------------------
 prop_addElement :: Eq a => [a] -> (Int, a) -> Bool
-prop_addElement a (pos, val) = val == (b !! pos)
-  where b = a !!= (pos, val)
+prop_addElement list (pos, val) = val == (newList !! pos)
+  where newList = list !!= (pos, val)
 
 -- TODO (Use Eriks!)
 -- Updates a value in a suduko at a given position and then return the updated
 -- suduko
 update :: Sudoku -> Pos -> Maybe Int -> Sudoku
-update (Sudoku l) pos n = Sudoku (update' l pos n)
-
-update' :: [[Maybe Int]] -> Pos -> Maybe Int -> [[Maybe Int]]
-update' (x:xs) (0,col) n = x !!= (col, n) : xs
-update' (x:xs) (row,col) n = x : update' xs (row-1, col) n
+update (Sudoku sudoku) (row,col) value = Sudoku (sudoku !!= (row,((sudoku !! row) !!= (col,value))))
 
 
 
@@ -252,7 +249,11 @@ readAndSolve file = do s <- readSudoku file
 
 
 isSolutionOf :: Sudoku -> Sudoku -> Bool
-isSolutionOf sud1 sud2 = sud1 == fromJust (solve sud2 )
+isSolutionOf sud1 sud2 = sud1 == fromJust (solve sud2)
+
+
+prop_SolveSound :: Sudoku -> Property
+prop_SolveSound sud = (solve sud) `isSolutionOf` sud 
 
 example :: Sudoku
 example =
