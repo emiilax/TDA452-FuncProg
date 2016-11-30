@@ -6,7 +6,7 @@ import Data.Char
 import Test.QuickCheck
 
 data Sudoku = Sudoku { rows :: [[Maybe Int]] }
-  deriving(Show)
+  deriving(Show,Eq)
 
 
 -- creates a blank suduko. firsts creates a list with 9 "Nothing", and then
@@ -135,23 +135,164 @@ allBlocksOk :: [Block] -> Bool
 allBlocksOk [] = True
 allBlocksOk (x:xs) = isOkayBlock x && allBlocksOk xs
 
+type Pos = (Int,Int)
 
 
--- sudokus and lists used for testing
+-- Given a sudoku this functions finds the blank cells and returns a list of the
+-- positions. Using getBlankRow
+blanks :: Sudoku -> [Pos]
+blanks (Sudoku sud) = getBlankRow 0 sud
+
+-- Used to find the rows that contains blank cells. The input is an integer and
+-- a [[Maybe Int]]. The integer is the row number. The function is using getBlankElem
+-- to get the column position.
+getBlankRow :: Int -> [[Maybe Int]] -> [Pos]
+getBlankRow _ [] = []
+getBlankRow r (x:xs) = getBlankCell r 0 x ++ getBlankRow(r+1) xs
+
+-- function that checks what position in a row a blank cell has. The input is
+-- integer, which represent the position and a [Maybe Int] that is the row
+-- the function goes through
+getBlankCell :: Int -> Int -> [Maybe Int] -> [Pos]
+getBlankCell _ _ [] = []
+getBlankCell r c (Nothing:xs) = (r,c) : getBlankCell r (c+1) xs
+getBlankCell r c (x:xs) = getBlankCell r (c+1) xs
+
+-- checks wheater the positions in the outpus is blank positions in the sudoku
+isBlank :: Sudoku -> [Pos] -> Bool
+isBlank _ [] = True
+isBlank (Sudoku l) (x:xs) = isNothing ((l !! row) !! column)
+                            && isBlank (Sudoku l) xs
+  where (row,column) = x
+
+-- Property that checks the blanks method works as it should
+prop_blank :: Sudoku -> Bool
+prop_blank sud = isBlank sud (blanks sud)
+
+-- Given a  list, and a touple of position and value. This function changes the
+-- value of the element on the given position in the list to the value given in
+--the touple
+(!!=) :: [a] -> (Int, a) -> [a]
+(!!=) x (pos,_) | length x < pos = error "(!!=) index bigger than list length"
+                | pos < 0        = error "(!!= negative index)"
+(!!=) x (pos, a) = take pos x ++ [a] ++ drop (pos+1) x
+
+--Property that checks the "!!=" method works as intended
+prop_updateElement :: Eq a => [a] -> (Int, a) -> Bool
+prop_updateElement oList (pos, _) | length oList < pos || pos < 0 = True
+prop_updateElement oList (pos, val) = val == (nList !! pos)
+  where nList = oList !!= (pos, val)
+
+--Help method that returns true if a position is in the bounds of a sudoku (0-8)
+validPos :: Pos -> Bool
+validPos (row, col) | row > 8 || col > 8 || row < 0 || col < 0 = False
+                    | otherwise = True
+
+-- Updates a value in a suduko at a given position and then return the updated
+-- suduko
+update :: Sudoku -> Pos -> Maybe Int -> Sudoku
+update sud pos (Just value) | not (validPos pos)       = error "udpate: index out of bounds"
+                            | not (isOkay sud)         = error "update: not a sudoku"
+                            | value < 1 || value > 9   = error "update: bad value"
+update (Sudoku sudoku) (row,col) value = Sudoku (sudoku !!= (row,((sudoku !! row) !!= (col,value))))
+
+--Property that checks the update method
+prop_updateSudoku :: Sudoku -> Pos -> Maybe Int -> Bool
+prop_updateSudoku sud pos _        | not (validPos pos)     = True
+                                   | not(isOkay sud)        = True
+prop_updateSudoku _ _ (Just value) | value < 1 || value > 8 = True
+prop_updateSudoku sudoku pos value = getPosValue (update sudoku pos value) pos == value
+
+--Help method that returns the value of a position
+getPosValue :: Sudoku -> Pos -> Maybe Int
+getPosValue (Sudoku l) (row,col) = ( l !! row) !! col
+
+--Finds the candidates for a position in the sudoku, uses candidates'
+candidates :: Sudoku -> Pos -> [Int]
+candidates sudoku pos = candidates' [1..9] sudoku pos
+
+--Searches through a sudoku at a position, test the integers in the first
+--list and returns the ones who are valid
+candidates' :: [Int] -> Sudoku -> Pos -> [Int]
+candidates' [] _ _            = []
+candidates' (x:xs) sudoku pos | isOkay(update sudoku pos (Just x)) = x : candidates' xs sudoku pos
+                              | otherwise = candidates' xs sudoku pos
+
+--property that checks if candidates behaves as intended
+prop_candidates :: Sudoku -> Pos -> Bool
+prop_candidates sudoku pos | not (validPos pos)  = True
+                           | not (isOkay sudoku) = True
+                           | otherwise = prop_candidates' (candidates sudoku pos) sudoku pos
+
+prop_candidates' :: [Int] -> Sudoku -> Pos -> Bool
+prop_candidates' [] _ _ = True
+prop_candidates' (x:xs) sudoku pos = isOkay(update sudoku pos (Just x)) && prop_candidates' xs sudoku pos
+
+--Finds the solution to a sudoku, uses solve' and solveCand
+solve :: Sudoku -> Maybe Sudoku
+solve sud | not (isOkay sud) = Nothing
+solve sud = solve' sud (blanks sud)
+
+--Finds all candidates in a position, uses solveCand to check candidates and then
+--finds all candidates for the next position until the list of position is empty
+solve' :: Sudoku -> [Pos] -> Maybe Sudoku
+solve' sud [] = Just sud
+solve' sud (x:xs) = tryCandidate sud x can
+  where can = candidates sud x
+
+--Test all candidates for a position. If a candidate is valid, it uses
+--solve to find the next positions to check if the sudoku can be solved.
+--These three methods are used recuserly with each other
+tryCandidate :: Sudoku -> Pos -> [Int] -> Maybe Sudoku
+tryCandidate _ _ [] = Nothing
+tryCandidate sud pos (x:xs) | isNothing solveNext = tryCandidate sud pos xs
+                            | otherwise = solveNext
+  where updated = update sud pos (Just x)
+        solveNext = solve updated
+
+--Reads a filepath, solves the sudoku and prints the solution
+readAndSolve :: FilePath -> IO ()
+readAndSolve file = do s <- readSudoku file
+                       let sud = solve s
+                       case sud of Nothing -> putStrLn "empty suduko"
+                                   _       -> printSudoku (fromJust sud)
+
+--Checks if a solution or a sudoku is the solution to a specific sudoku
+--returns true if the first input is the solution to the second
+isSolutionOf :: Sudoku -> Sudoku -> Bool
+isSolutionOf sud1 sud2 | not(isOkay sud1) || not(isOkay sud2) = False
+                       | isNothing solution = False
+                       | otherwise = sud1 == fromJust (solution)
+  where solution = solve sud2
+
+--property that check if the solve method behaves as intended
+--first checks if the sudoku solution is okay, and then checks if the solution is
+--the solution to the inputted sudoku
+prop_SolveSound :: Sudoku -> Property
+prop_SolveSound sud | isNothing (solved) = discard
+                    | otherwise = isOkay(fromJust(solved)) ==> (fromJust(solved)) `isSolutionOf` sud
+    where solved = solve sud
+
+fewerChecks prop = quickCheckWith stdArgs{ maxSuccess = 30 } prop
+
 
 example :: Sudoku
 example =
   Sudoku
-    [ [Just 3, Just 6, Nothing,Nothing,Just 7, Just 5, Just 2, Nothing,Nothing]
+    [ [Just 3, Just 6, Nothing,Nothing,Just 7, Just 1, Just 2, Nothing,Nothing]
     , [Nothing,Just 5, Nothing,Nothing,Nothing,Nothing,Just 1, Just 8, Nothing]
     , [Nothing,Nothing,Just 9, Just 2, Nothing,Just 4, Just 7, Nothing,Nothing]
     , [Nothing,Nothing,Nothing,Nothing,Just 1, Just 3, Nothing,Just 2, Just 8]
     , [Just 4, Nothing,Nothing,Just 5, Nothing,Just 2, Nothing,Nothing,Just 9]
     , [Just 2, Just 7, Nothing,Just 4, Just 6, Nothing,Nothing,Nothing,Nothing]
-    , [Nothing,Nothing,Just 5, Just 3, Nothing,Just 8, Just 3, Nothing,Nothing]
+    , [Nothing,Nothing,Just 5, Just 3, Nothing,Just 8, Just 9, Nothing,Nothing]
     , [Nothing,Just 8, Just 3, Nothing,Nothing,Nothing,Nothing,Just 6, Nothing]
     , [Nothing,Nothing,Just 7, Just 6, Just 9, Nothing,Nothing,Just 4, Just 3]
     ]
+
+testl :: [Maybe Int]
+testl = [Just 3, Just 6, Nothing,Nothing,Just 7, Just 1, Just 2, Nothing,Nothing]
+
 
 test::[[Maybe Int]]
 test = [ [Just 3, Just 6, Nothing,Nothing,Just 7, Just 1, Just 2, Nothing,Nothing]
