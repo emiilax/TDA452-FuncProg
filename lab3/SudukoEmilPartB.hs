@@ -252,8 +252,7 @@ isSolutionOf :: Sudoku -> Sudoku -> Bool
 isSolutionOf sud1 sud2 = sud1 == fromJust (solve sud2)
 
 
-prop_SolveSound :: Sudoku -> Property
-prop_SolveSound sud = (solve sud) `isSolutionOf` sud 
+
 
 example :: Sudoku
 example =
