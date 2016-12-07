@@ -18,65 +18,56 @@ allBlankSudoku = Sudoku (replicate 9 (replicate 9 Nothing))
 -- rows, and then check so that all rows contains 9 elements (9 columns) with
 -- isSudoku columns
 isSudoku :: Sudoku -> Bool
-isSudoku (Sudoku rows) = length rows == 9 && isSudokuColumns rows
+isSudoku (Sudoku m) = length m == 9 && all isRow m
+  where
+    isRow xs = length xs == 9 && all inRange (catMaybes xs)
 
--- has a suduko table ([[Maybe Int]]) as input, and it cheks so that all
--- rows has the lenght 9
-isSudokuColumns :: [[Maybe Int]] -> Bool
-isSudokuColumns [] = True
-isSudokuColumns (x:xs) = length x == 9 && isCorrectValue x && isSudokuColumns xs
+-- Checks so that a given value is in the range that fits in a sudou (1..9)
+inRange :: Int -> Bool
+inRange n = n > 0 && n < 10
 
---checks that every value in a row is between 1 - 9 or nothing
-isCorrectValue :: [Maybe Int] -> Bool
-isCorrectValue [] = True
-isCorrectValue (Nothing:xs) = isCorrectValue xs
-isCorrectValue ((Just x):xs) | x > 0 && x < 10 = isCorrectValue xs
-                             | otherwise = False
 
 -- checks weather the sudoku is "solved" or not. a sudoku is solved if its a
 -- sudoku and no cell contains "Nothing" (uses isRowsSolved to determine if the
 -- sudoku contains "Nothing").
 isSolved :: Sudoku -> Bool
-isSolved (Sudoku a) = isSudoku (Sudoku a) && isRowsSolved a
+isSolved (Sudoku m) = all isJust $ concat m
 
--- checks wheather the board contains the element "Nothing" or not. Returns
--- true if not contains, otherwise false
-isRowsSolved :: [[Maybe Int]] -> Bool
-isRowsSolved [] = True
-isRowsSolved (x:xs) | Nothing `elem` x = False
-                    | otherwise = isRowsSolved xs
 
 -- method used to print a sudoku. uses a helpfunction rowString to create
 -- strings of each row. the rows are then concatinaded and then prints.
 printSudoku :: Sudoku -> IO ()
-printSudoku (Sudoku l) = do let s = concatMap rowString l
-                            putStrLn s
+printSudoku sud = putStrLn (showSudoku sud)
 
--- creates a string that represents a row.
-rowString:: [Maybe Int] -> String
-rowString [] = "\n"
-rowString (Nothing:xs) = "." ++ rowString xs
-rowString (Just n:xs) = show n ++ rowString xs
+-- creates a sudoku string from a sudoku
+showSudoku :: Sudoku -> String
+showSudoku (Sudoku l) = unlines $ map showRow l
+  where showRow = map showCell
+        showCell Nothing = '.'
+        showCell (Just n) = intToDigit n
 
--- reads suduko from a file. uses a helpfunction readRow to create a
--- [Maybe Int] from a row in the file.
+
+-- reads suduko from a file. uses a helpfunction readSudoku'
 readSudoku :: FilePath -> IO Sudoku
 readSudoku f = do file <- readFile f
-                  let sudoku = Sudoku (map readRow (lines file))
+                  let sudoku = readSudoku' file
                   return sudoku
 
--- used in readSudoku. used to read a row and return it as a [Maybe Int]
-readRow::String -> [Maybe Int]
-readRow [] = []
-readRow (x:xs) | isDigit x = Just (digitToInt x) : readRow xs
-               | otherwise = Nothing : readRow xs
+-- used in readSudoku. Converts every row in the given String into a
+-- sudoku list and returns the Sudoku
+readSudoku' :: String -> Sudoku
+readSudoku' m = Sudoku (map readRow $ lines m)
+     where
+       readRow = map readCell
+       readCell '.' = Nothing
+       readCell c   = Just (digitToInt c)
 
 -- creates a arbitrary cell. frequency is used so that we can determine the
 -- probability for a cell with "Nothing" or a digit. we uses 9 on "Nothing" and 1
 -- on "Just n" since the assignment said 90% vs 10%
 cell :: Gen (Maybe Int)
 cell = frequency [(9, return Nothing ),
-                  (1, elements [Just n | n <- [1..9]])]
+                  (1, fmap Just $ choose (1,9))]
 
 -- Given in the assignment. An abitrary Sudoku
 instance Arbitrary Sudoku where
@@ -127,13 +118,8 @@ get3x3Block (x:y:z:xs) = (x1 ++ y1 ++ z1): (x2 ++ y2 ++ z2) : (x3 ++ y3 ++ z3) :
 -- function checks so that the sudoku isSudoku and so that non of the blocks
 -- contains more than one of each element
 isOkay :: Sudoku -> Bool
-isOkay sud = isSudoku sud && allBlocksOk (blocks sud)
+isOkay sud = all isOkayBlock $ blocks sud
 
--- method used to check so that non of the blocks in the list contains more than
--- one of each elemet
-allBlocksOk :: [Block] -> Bool
-allBlocksOk [] = True
-allBlocksOk (x:xs) = isOkayBlock x && allBlocksOk xs
 
 type Pos = (Int,Int)
 
