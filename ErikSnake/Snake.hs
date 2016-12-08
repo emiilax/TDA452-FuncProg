@@ -2,12 +2,11 @@ module Snake where
 
 import Data.Maybe
 
-
 -- Represents the snake-field
 data Grid = Grid [[Tile]]
 
 -- Represents a tile in the grid
-data Tile = Filled | Empty
+data Tile = SnakeBody | Coin | Empty
 
 -- Represents a position in the grid
 type Pos = (Int, Int)
@@ -23,7 +22,8 @@ showGrid :: Grid -> String
 showGrid (Grid grid) = unlines $ map showRow grid
   where showRow = map showPos
         showPos Empty = '-'
-        showPos Filled= '*'
+        showPos SnakeBody= '*'
+        showPos Coin = 'o'
 
 -- prints the grid
 printGrid :: Grid -> IO ()
@@ -50,7 +50,7 @@ refreshGrid (Grid grid) snake = refreshGrid' (createGrid (length grid)) snake
   where
     refreshGrid' g End = g
     refreshGrid' g (Add pos snake) = refreshGrid' updatedGrid snake
-      where updatedGrid = updateTileInGrid g pos Filled
+      where updatedGrid = updateTileInGrid g pos SnakeBody
 
 -- creates an empty grid
 createGrid :: Int -> Grid
@@ -72,6 +72,9 @@ moveSnake (Add (row,col) snake) dir | dir == "up"    = Add (row+1,col) restOfSna
 
 snake = (Add (1,3) (Add (1,2) (Add (1,1) End)))
 
+shortsnake:: Snake
+shortsnake = Add (4,4) End
+
 s1 = moveSnake snake "right"
 g1 = refreshGrid grid s1
 
@@ -79,11 +82,4 @@ s2 = moveSnake s1 "up"
 g2 = refreshGrid grid s2
 
 
-grid = createGrid 10
-
-
-
-testGrid :: Grid
-testGrid = Grid [[Empty, Empty, Empty],
-                 [Empty, Empty, Empty],
-                 [Filled, Filled, Filled]]
+grid = createGrid 15
