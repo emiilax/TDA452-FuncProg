@@ -5,18 +5,34 @@ import Haste.DOM
 import Haste.Graphics.Canvas
 
 
-main = do text <- newTextElem "You have not pressed any arrow yet"
-          canvas <- mkCanvas 300 300
+main = do canvas <- mkCanvas 300 300
           appendChild documentBody canvas
           Just can <- getCanvas canvas
 
           --render can (drawGrid grid 0)
 
           input1 <- newElem "input"
+          setProp input1 "value" currDir
           input2 <- newElem "input"
           setProp input2 "value" (show 1)
           row documentBody [input1, input2]
-          renderGrid can (refreshGrid grid theSnake) theSnake input1
+
+
+          let renderGrid snake pos = do
+              n <- getProp input1 "value"
+              let s = toString n
+              let newSnake = moveSnake snake s
+              let newGrid = refreshGrid grid newSnake pos
+              render can $ drawGrid newGrid 0
+              setTimer (Once 500) (renderGrid newSnake ) >> return ()
+
+          {-let move = do s <- getProp input1 "value"
+                        renderGrid (toString s) -}
+
+
+
+
+          --renderGrid can (refreshGrid grid theSnake) theSnake input1
 
           documentBody `onEvent` KeyDown $ \k -> do
             let value = getDirection k
@@ -24,21 +40,28 @@ main = do text <- newTextElem "You have not pressed any arrow yet"
             case (length value) of  0 -> return ()
                                     _ -> set input1 [prop "value" =: value]
 
+          renderGrid snake
           incInput2 input2
 
           --onEvent txt KeyUp $ \keycode -> do
           --  alert keycode
 
 currDir :: String
-currDir = "left"
+currDir = "up"
 
-renderGrid :: Canvas -> Grid -> Snake -> Elem -> IO()
+{-}
+renderGrid :: Canvas -> Grid -> Snake-> Elem -> IO()
 renderGrid can list snake input = do
   render can $ drawGrid list 0
-  let theSnake = moveSnake snake currDir
+  i <- getProp input "value"
+  let s = toString i
+  writeLog s
+  let theSnake = moveSnake snake s
   let newGrid = refreshGrid grid theSnake
   setTimer (Once 1000) (renderGrid can newGrid theSnake input) >> return ()
 
+
+-}
 
 
 mkCanvas :: Int -> Int -> IO Elem

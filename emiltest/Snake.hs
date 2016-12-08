@@ -1,6 +1,6 @@
 module Snake where
-
 import Data.Maybe
+import System.Random
 
 -- Represents the snake-field
 data Grid = Grid [[Tile]]
@@ -44,11 +44,11 @@ updateTileInGrid (Grid grid) (row, col) tile = newGrid
 
 -- Refreshes the frid with the snakes new positions. It creates a new empty
 -- grid and fill it with the Snake, instead of keeping track of snakes old pos
-refreshGrid :: Grid -> Snake -> Grid
-refreshGrid (Grid grid) snake = refreshGrid' (createGrid (length grid)) snake
+refreshGrid :: Grid -> Snake -> Pos -> Grid
+refreshGrid (Grid grid) snake coinpos = refreshGrid' (createGrid (length grid)) snake coinpos
   where
-    refreshGrid' g End = g
-    refreshGrid' g (Add pos snake) = refreshGrid' updatedGrid snake
+    refreshGrid' g End coinpos = updateTileInGrid g coinpos Coin
+    refreshGrid' g (Add pos snake) _ = refreshGrid' updatedGrid snake
       where updatedGrid = updateTileInGrid g pos Filled
 
 -- creates an empty grid
@@ -57,15 +57,21 @@ createGrid n = Grid (replicate n (replicate n Empty))
 
 -- Moves the snake in a given direction
 moveSnake :: Snake -> String -> Snake
-moveSnake (Add (row,col) snake) dir | dir == "up"    = Add (row+1,col) restOfSnake
-                                    | dir == "down"  = Add (row-1,col) restOfSnake
+moveSnake (Add (row,col) snake) dir | dir == "down"    = Add (row+1,col) restOfSnake
+                                    | dir == "up"  = Add (row-1,col) restOfSnake
                                     | dir == "left"  = Add (row,col-1) restOfSnake
                                     | dir == "right" = Add (row,col+1) restOfSnake
+                                    | otherwise = error ("moveSnake: not ok" ++ dir )
   where
     restOfSnake = moveSnake' (row,col) snake
     moveSnake' _ End = End
     moveSnake' pos (Add pos1 snake) = Add pos (moveSnake' pos1 snake)
 
+
+ranPos :: StdGen -> Int -> Pos
+ranPos g n = (x,y)
+  where (x,g1) = randomR(0, n) g
+        (y,g2) = randomR(0, n) g1
 
 ------------ Testing variables ------------
 
@@ -81,7 +87,7 @@ s2 = moveSnake s1 "up"
 g2 = refreshGrid grid s2
 
 
-grid = createGrid 5
+grid = createGrid 15
 
 
 testGrid :: Grid
