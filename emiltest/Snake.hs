@@ -1,7 +1,6 @@
 module Snake where
-  
-import Data.Maybe
 
+import Data.Maybe
 
 -- Represents the snake-field
 data Grid = Grid [[Tile]]
@@ -72,6 +71,9 @@ moveSnake (Add (row,col) snake) dir | dir == "up"    = Add (row+1,col) restOfSna
 
 snake = (Add (1,3) (Add (1,2) (Add (1,1) End)))
 
+shortsnake:: Snake
+shortsnake = Add (4,4) End
+
 s1 = moveSnake snake "right"
 g1 = refreshGrid grid s1
 
@@ -80,7 +82,6 @@ g2 = refreshGrid grid s2
 
 
 grid = createGrid 5
-
 
 
 testGrid :: Grid
