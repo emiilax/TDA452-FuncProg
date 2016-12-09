@@ -36,7 +36,8 @@ main = do canvas <- mkCanvas 300 300
                                                   alert "You lost"
                                                   main
                                      CCoin    -> do render can $ drawGrid updatedGrid 0
-                                                    setTimer (Once 300) (renderGrid (growSnake newSnake coinpos) coinpos) >> return ()
+                                                    g <- newStdGen
+                                                    setTimer (Once 300) (renderGrid (growSnake newSnake coinpos) (ranPos g 14)) >> return ()
                                                     where updatedGrid = updateTileInGrid newGrid coinpos SnakeBody
                                      CNothing -> do render can $ drawGrid newGrid 0
                                                     setTimer (Once 300) (renderGrid newSnake coinpos) >> return ()
