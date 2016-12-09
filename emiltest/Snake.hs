@@ -6,7 +6,7 @@ import System.Random
 data Grid = Grid [[Tile]]
 
 -- Represents a tile in the grid
-data Tile = Filled | Empty
+data Tile = SnakeBody | Coin | Empty
 
 -- Represents a position in the grid
 type Pos = (Int, Int)
@@ -22,7 +22,8 @@ showGrid :: Grid -> String
 showGrid (Grid grid) = unlines $ map showRow grid
   where showRow = map showPos
         showPos Empty = '-'
-        showPos Filled= '*'
+        showPos SnakeBody= '*'
+        showPos Coin = 'o'
 
 -- prints the grid
 printGrid :: Grid -> IO ()
@@ -45,11 +46,12 @@ updateTileInGrid (Grid grid) (row, col) tile = newGrid
 -- Refreshes the frid with the snakes new positions. It creates a new empty
 -- grid and fill it with the Snake, instead of keeping track of snakes old pos
 refreshGrid :: Grid -> Snake -> Pos -> Grid
-refreshGrid (Grid grid) snake coinpos = refreshGrid' (createGrid (length grid)) snake coinpos
-  where
-    refreshGrid' g End coinpos = updateTileInGrid g coinpos Coin
-    refreshGrid' g (Add pos snake) _ = refreshGrid' updatedGrid snake
-      where updatedGrid = updateTileInGrid g pos Filled
+refreshGrid (Grid grid) snake cp = refreshGrid' (createGrid (length grid)) snake cp
+
+refreshGrid' :: Grid -> Snake -> Pos -> Grid
+refreshGrid' g End cp = updateTileInGrid g cp Coin
+refreshGrid' g (Add pos snake) cp = refreshGrid' updatedGrid snake cp
+  where updatedGrid = updateTileInGrid g pos SnakeBody
 
 -- creates an empty grid
 createGrid :: Int -> Grid
@@ -57,8 +59,8 @@ createGrid n = Grid (replicate n (replicate n Empty))
 
 -- Moves the snake in a given direction
 moveSnake :: Snake -> String -> Snake
-moveSnake (Add (row,col) snake) dir | dir == "down"    = Add (row+1,col) restOfSnake
-                                    | dir == "up"  = Add (row-1,col) restOfSnake
+moveSnake (Add (row,col) snake) dir | dir == "down"  = Add (row+1,col) restOfSnake
+                                    | dir == "up"    = Add (row-1,col) restOfSnake
                                     | dir == "left"  = Add (row,col-1) restOfSnake
                                     | dir == "right" = Add (row,col+1) restOfSnake
                                     | otherwise = error ("moveSnake: not ok" ++ dir )
@@ -75,7 +77,7 @@ ranPos g n = (x,y)
 
 ------------ Testing variables ------------
 
-snake = (Add (1,3) (Add (1,2) (Add (1,1) End)))
+snake = (Add (3,3) (Add (3,2) (Add (3,1) End)))
 
 shortsnake:: Snake
 shortsnake = Add (4,4) End
@@ -88,9 +90,3 @@ g2 = refreshGrid grid s2
 
 
 grid = createGrid 15
-
-
-testGrid :: Grid
-testGrid = Grid [[Empty, Empty, Empty],
-                 [Empty, Empty, Empty],
-                 [Filled, Filled, Filled]]

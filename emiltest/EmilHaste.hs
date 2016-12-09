@@ -3,6 +3,7 @@ import Haste
 import Haste.Events
 import Haste.DOM
 import Haste.Graphics.Canvas
+import System.Random
 
 
 main = do canvas <- mkCanvas 300 300
@@ -24,7 +25,7 @@ main = do canvas <- mkCanvas 300 300
               let newSnake = moveSnake snake s
               let newGrid = refreshGrid grid newSnake pos
               render can $ drawGrid newGrid 0
-              setTimer (Once 500) (renderGrid newSnake ) >> return ()
+              setTimer (Once 500) (renderGrid newSnake pos) >> return ()
 
           {-let move = do s <- getProp input1 "value"
                         renderGrid (toString s) -}
@@ -40,7 +41,8 @@ main = do canvas <- mkCanvas 300 300
             case (length value) of  0 -> return ()
                                     _ -> set input1 [prop "value" =: value]
 
-          renderGrid snake
+          g<-newStdGen
+          renderGrid snake (ranPos g 14)
           incInput2 input2
 
           --onEvent txt KeyUp $ \keycode -> do
@@ -101,7 +103,8 @@ fillTiles' (x:xs) row col = do
     let drow = fromIntegral row
     let dcol = fromIntegral col
     case x of Empty  -> stroke $ rect (drow, dcol) (drow+20, dcol+20)
-              Filled -> fill $ rect (drow, dcol) (drow+20, dcol+20)
+              SnakeBody -> color (RGB 255 0 0) $ fill $ circle (drow+10, dcol+10) 10
+              Coin -> color (RGB 255 215 0) $ fill $ circle (drow+10, dcol+10) 10
     fillTiles' xs (row+20) col
 
 
