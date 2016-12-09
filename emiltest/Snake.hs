@@ -7,7 +7,7 @@ data Grid = Grid [[Tile]]
 
 -- Represents a tile in the grid
 data Tile = SnakeBody | Coin | Empty
-
+  deriving (Eq)
 -- Represents a position in the grid
 type Pos = (Int, Int)
 
@@ -16,6 +16,10 @@ data Snake = Add Pos Snake | End
 instance Show Snake where
   show End = " "
   show (Add pos snake) = show pos ++ show snake
+
+-- Represents a collision type.
+data CollisionState = CWall | CCoin | CSnake | CNothing
+  deriving (Eq, Show)
 
 -- Returns the grid as a String
 showGrid :: Grid -> String
@@ -57,20 +61,34 @@ refreshGrid' g (Add pos snake) cp = refreshGrid' updatedGrid snake cp
 createGrid :: Int -> Grid
 createGrid n = Grid (replicate n (replicate n Empty))
 
+
+
+collision :: Grid -> Snake -> CollisionState
+collision _ (Add (row, col) restOfSnake)          | row > 14 || col > 14 || row < 0 || col < 0 = CWall
+collision (Grid grid) (Add (row, col) restOfSnake)| isSnakePos (row, col) restOfSnake          = CSnake
+                                                  | tile == Coin                               = CCoin
+                                                  | otherwise                                  = CNothing
+  where tile = (grid !! row) !! col
+
+
 isSnakePos :: Pos -> Snake -> Bool
 isSnakePos _ End = False
-isSnakePos (row,col) (Add (sr,sc) snake) = row == sr && col == sc 
+isSnakePos (row,col) (Add (sr,sc) rsnake) | row == sr && col == sc = True
+                                          | otherwise = isSnakePos (row, col) rsnake
 
 
+checkSnakePosBehind :: Pos -> Snake -> Bool
+checkSnakePosBehind _ End = False
+checkSnakePosBehind (row,col) (Add (sr,sc) snake) = row == sr && col == sc
 -- Moves the snake in a given direction
 moveSnake :: Snake -> String -> Snake
-moveSnake (Add (row,col) snake) dir | dir == "down"  && not(isSnakePos (row+1,col) snake)= Add (row+1,col) restOfSnake
+moveSnake (Add (row,col) snake) dir | dir == "down"  && not(checkSnakePosBehind (row+1,col) snake)= Add (row+1,col) restOfSnake
                                     | dir == "down"  = Add (row-1,col) restOfSnake
-                                    | dir == "up"    && not(isSnakePos (row-1,col) snake)= Add (row-1,col) restOfSnake
+                                    | dir == "up"    && not(checkSnakePosBehind (row-1,col) snake)= Add (row-1,col) restOfSnake
                                     | dir == "up"    = Add (row+1,col) restOfSnake
-                                    | dir == "left"  && not(isSnakePos (row,col-1) snake) = Add (row,col-1) restOfSnake
+                                    | dir == "left"  && not(checkSnakePosBehind (row,col-1) snake) = Add (row,col-1) restOfSnake
                                     | dir == "left"  = Add (row,col+1) restOfSnake
-                                    | dir == "right" && not(isSnakePos (row,col+1) snake)= Add (row,col+1) restOfSnake
+                                    | dir == "right" && not(checkSnakePosBehind (row,col+1) snake)= Add (row,col+1) restOfSnake
                                     | dir == "right" = Add (row,col-1) restOfSnake
                                     | otherwise = error "moveSnake: Direction not allowed"
     where
@@ -86,7 +104,7 @@ ranPos g n = (x,y)
 
 ------------ Testing variables ------------
 
-snake = (Add (3,3) (Add (3,2) (Add (3,1) End)))
+snake = (Add (3,6) (Add (3,5) (Add (3,4) (Add (3,3) (Add (3,2) (Add (3,1) End))))))
 
 shortsnake:: Snake
 shortsnake = Add (4,4) End
