@@ -76,7 +76,6 @@ isSnakePos _ End = False
 isSnakePos (row,col) (Add (sr,sc) rsnake) | row == sr && col == sc = True
                                           | otherwise = isSnakePos (row, col) rsnake
 
-
 checkSnakePosBehind :: Pos -> Snake -> Bool
 checkSnakePosBehind _ End = False
 checkSnakePosBehind (row,col) (Add (sr,sc) snake) = row == sr && col == sc

@@ -28,12 +28,18 @@ main = do canvas <- mkCanvas 300 300
 
               writeLog (show collisionState)
 
-              case collisionState of CWall -> alert "lel pleb wall"
-                                     CSnake -> alert "lel snake pleb"
-                                     CNothing -> return ()
 
-              render can $ drawGrid newGrid 0
-              setTimer (Once 300) (renderGrid newSnake coinpos) >> return ()
+              case collisionState of CWall -> do clearChildren documentBody
+                                                 alert "You lost"
+                                                 main
+                                     CSnake -> do clearChildren documentBody
+                                                  alert "You lost"
+                                                  main
+                                     CCoin    -> do render can $ drawGrid updatedGrid 0
+                                                    setTimer (Once 300) (renderGrid (growSnake newSnake coinpos) coinpos) >> return ()
+                                                    where updatedGrid = updateTileInGrid newGrid coinpos SnakeBody
+                                     CNothing -> do render can $ drawGrid newGrid 0
+                                                    setTimer (Once 300) (renderGrid newSnake coinpos) >> return ()
 
           {-let move = do s <- getProp input1 "value"
                         renderGrid (toString s) -}
@@ -46,8 +52,8 @@ main = do canvas <- mkCanvas 300 300
           documentBody `onEvent` KeyDown $ \k -> do
             let value = getDirection k
             let currDir = value
-            case (length value) of  0 -> return ()
-                                    _ -> set input1 [prop "value" =: value]
+            case length value of  0 -> return ()
+                                  _ -> set input1 [prop "value" =: value]
 
           g<-newStdGen
           renderGrid snake (ranPos g 14)
@@ -58,21 +64,6 @@ main = do canvas <- mkCanvas 300 300
 
 currDir :: String
 currDir = "up"
-
-{-}
-renderGrid :: Canvas -> Grid -> Snake-> Elem -> IO()
-renderGrid can list snake input = do
-  render can $ drawGrid list 0
-  i <- getProp input "value"
-  let s = toString i
-  writeLog s
-  let theSnake = moveSnake snake s
-  let newGrid = refreshGrid grid theSnake
-  setTimer (Once 1000) (renderGrid can newGrid theSnake input) >> return ()
-
-
--}
-
 
 mkCanvas :: Int -> Int -> IO Elem
 mkCanvas width height = do
@@ -103,7 +94,7 @@ drawGrid (Grid (x:xs)) n = do fillTiles x n
 
 
 fillTiles :: [Tile] -> Int -> Picture ()
-fillTiles list n = fillTiles' list 0 n
+fillTiles list = fillTiles' list 0
 
 fillTiles' :: [Tile] -> Int -> Int-> Picture ()
 fillTiles' [] _  _   = return ()
