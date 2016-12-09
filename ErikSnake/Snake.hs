@@ -1,12 +1,16 @@
 module Snake where
-
 import Data.Maybe
+import System.Random
 
 -- Represents the snake-field
 data Grid = Grid [[Tile]]
 
 -- Represents a tile in the grid
 data Tile = SnakeBody | Coin | Empty
+  deriving (Eq)
+
+data CollisionState = CWall | CCoin | CSnake | CNothing
+  deriving (Eq, Show)
 
 -- Represents a position in the grid
 type Pos = (Int, Int)
@@ -45,12 +49,13 @@ updateTileInGrid (Grid grid) (row, col) tile = newGrid
 
 -- Refreshes the frid with the snakes new positions. It creates a new empty
 -- grid and fill it with the Snake, instead of keeping track of snakes old pos
-refreshGrid :: Grid -> Snake -> Grid
-refreshGrid (Grid grid) snake = refreshGrid' (createGrid (length grid)) snake
-  where
-    refreshGrid' g End = g
-    refreshGrid' g (Add pos snake) = refreshGrid' updatedGrid snake
-      where updatedGrid = updateTileInGrid g pos SnakeBody
+refreshGrid :: Grid -> Snake -> Pos -> Grid
+refreshGrid (Grid grid) snake cp = refreshGrid' (createGrid (length grid)) snake cp
+
+refreshGrid' :: Grid -> Snake -> Pos -> Grid
+refreshGrid' g End cp = updateTileInGrid g cp Coin
+refreshGrid' g (Add pos snake) cp = refreshGrid' updatedGrid snake cp
+  where updatedGrid = updateTileInGrid g pos SnakeBody
 
 -- creates an empty grid
 createGrid :: Int -> Grid
@@ -58,19 +63,41 @@ createGrid n = Grid (replicate n (replicate n Empty))
 
 -- Moves the snake in a given direction
 moveSnake :: Snake -> String -> Snake
-moveSnake (Add (row,col) snake) dir | dir == "up"    = Add (row+1,col) restOfSnake
+moveSnake (Add (row,col) snake) dir | dir == "down"  && not(isSnakePos (row+1,col) snake)= Add (row+1,col) restOfSnake
                                     | dir == "down"  = Add (row-1,col) restOfSnake
-                                    | dir == "left"  = Add (row,col-1) restOfSnake
-                                    | dir == "right" = Add (row,col+1) restOfSnake
-  where
-    restOfSnake = moveSnake' (row,col) snake
-    moveSnake' _ End = End
-    moveSnake' pos (Add pos1 snake) = Add pos (moveSnake' pos1 snake)
+                                    | dir == "up"    && not(isSnakePos (row-1,col) snake)= Add (row-1,col) restOfSnake
+                                    | dir == "up"    = Add (row+1,col) restOfSnake
+                                    | dir == "left"  && not(isSnakePos (row,col-1) snake) = Add (row,col-1) restOfSnake
+                                    | dir == "left"  = Add (row,col+1) restOfSnake
+                                    | dir == "right" && not(isSnakePos (row,col+1) snake)= Add (row,col+1) restOfSnake
+                                    | dir == "right" = Add (row,col-1) restOfSnake
+                                    | otherwise = error "moveSnake: Direction not allowed"
+    where
+      restOfSnake = moveSnake' (row,col) snake
+      moveSnake' _ End = End
+      moveSnake' pos (Add pos1 snake) = Add pos (moveSnake' pos1 snake)
+
+ranPos :: StdGen -> Int -> Pos
+ranPos g n = (x,y)
+  where (x,g1) = randomR(0, n) g
+        (y,g2) = randomR(0, n) g1
+
+isSnakePos :: Pos -> Snake -> Bool
+isSnakePos _ End = False
+isSnakePos (row,col) (Add (sr,sc) rsnake) | row == sr && col == sc = True
+                                          | otherwise = isSnakePos (row, col) rsnake
+
+collision :: Grid -> Snake -> CollisionState
+collision _ (Add (row, col) restOfSnake)          | row > 14 || col > 14 || row < 0 || col < 0 = CWall
+collision (Grid grid) (Add (row, col) restOfSnake)| isSnakePos (row, col) restOfSnake          = CSnake
+                                                  | tile == Coin                               = CCoin
+                                                  | otherwise                                  = CNothing
+  where tile = (grid !! row) !! col
 
 
 ------------ Testing variables ------------
 
-snake = (Add (1,3) (Add (1,2) (Add (1,1) End)))
+snake = (Add (3,6) (Add (3,5) (Add (3,4) (Add (3,3) (Add (3,2) (Add (3,1) End))))))
 
 shortsnake:: Snake
 shortsnake = Add (4,4) End
