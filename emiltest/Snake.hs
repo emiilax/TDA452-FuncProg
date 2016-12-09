@@ -57,17 +57,26 @@ refreshGrid' g (Add pos snake) cp = refreshGrid' updatedGrid snake cp
 createGrid :: Int -> Grid
 createGrid n = Grid (replicate n (replicate n Empty))
 
+isSnakePos :: Pos -> Snake -> Bool
+isSnakePos _ End = False
+isSnakePos (row,col) (Add (sr,sc) snake) = row == sr && col == sc 
+
+
 -- Moves the snake in a given direction
 moveSnake :: Snake -> String -> Snake
-moveSnake (Add (row,col) snake) dir | dir == "down"  = Add (row+1,col) restOfSnake
-                                    | dir == "up"    = Add (row-1,col) restOfSnake
-                                    | dir == "left"  = Add (row,col-1) restOfSnake
-                                    | dir == "right" = Add (row,col+1) restOfSnake
-                                    | otherwise = error ("moveSnake: not ok" ++ dir )
-  where
-    restOfSnake = moveSnake' (row,col) snake
-    moveSnake' _ End = End
-    moveSnake' pos (Add pos1 snake) = Add pos (moveSnake' pos1 snake)
+moveSnake (Add (row,col) snake) dir | dir == "down"  && not(isSnakePos (row+1,col) snake)= Add (row+1,col) restOfSnake
+                                    | dir == "down"  = Add (row-1,col) restOfSnake
+                                    | dir == "up"    && not(isSnakePos (row-1,col) snake)= Add (row-1,col) restOfSnake
+                                    | dir == "up"    = Add (row+1,col) restOfSnake
+                                    | dir == "left"  && not(isSnakePos (row,col-1) snake) = Add (row,col-1) restOfSnake
+                                    | dir == "left"  = Add (row,col+1) restOfSnake
+                                    | dir == "right" && not(isSnakePos (row,col+1) snake)= Add (row,col+1) restOfSnake
+                                    | dir == "right" = Add (row,col-1) restOfSnake
+                                    | otherwise = error "moveSnake: Direction not allowed"
+    where
+      restOfSnake = moveSnake' (row,col) snake
+      moveSnake' _ End = End
+      moveSnake' pos (Add pos1 snake) = Add pos (moveSnake' pos1 snake)
 
 
 ranPos :: StdGen -> Int -> Pos

@@ -19,13 +19,13 @@ main = do canvas <- mkCanvas 300 300
           row documentBody [input1, input2]
 
 
-          let renderGrid snake pos = do
+          let renderGrid snake coinpos = do
               n <- getProp input1 "value"
-              let s = toString n
-              let newSnake = moveSnake snake s
-              let newGrid = refreshGrid grid newSnake pos
+              let dir = toString n
+              let (Add spos newSnake) = moveSnake snake dir
+              let newGrid = refreshGrid grid (Add spos newSnake) coinpos
               render can $ drawGrid newGrid 0
-              setTimer (Once 500) (renderGrid newSnake pos) >> return ()
+              setTimer (Once 500) (renderGrid (Add spos newSnake) coinpos) >> return ()
 
           {-let move = do s <- getProp input1 "value"
                         renderGrid (toString s) -}
