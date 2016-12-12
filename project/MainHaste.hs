@@ -11,10 +11,14 @@ main = do canvas <- mkCanvas 300 -- Creates a canvas (the snake-field)
           appendChild documentBody canvas
           Just can <- getCanvas canvas
 
+
+
           -- inputBox that contains the last pressed direction. Used becouse
           -- you can not have global variables. This box is hided in the html
           keyInput <- newElem "input"
           setProp keyInput "value" defaultDir
+          scoreText <- newElem "scoreText"
+          column documentBody [scoreText]
 
           documentBody `onEvent` KeyDown $ \k -> do
             let value = getDirection k
@@ -23,7 +27,7 @@ main = do canvas <- mkCanvas 300 -- Creates a canvas (the snake-field)
                                   _ -> set keyInput [prop "value" =: value]
 
           g<-newStdGen
-          renderGrid can keyInput grid startSnake (ranPos g 14 startSnake)
+          renderGrid can keyInput grid startSnake (ranPos g 14 startSnake) scoreText
 
 --Method that renders the grid. "This is where the magic happens". It calls on
 --itself when the timer-event is fired.
@@ -34,8 +38,9 @@ main = do canvas <- mkCanvas 300 -- Creates a canvas (the snake-field)
 --  grid   = the grid that the snake is drawn on
 --  snake  = the snake
 --  pos    = the position of the coin
-renderGrid :: Canvas -> Elem -> Grid -> Snake -> Pos -> IO()
-renderGrid can input grid snake coinpos = do
+--  elem   = score text element that shows the current score
+renderGrid :: Canvas -> Elem -> Grid -> Snake -> Pos -> Elem -> IO()
+renderGrid can input grid snake coinpos scoreelem = do
     n <- getProp input "value"
     let dir = toString n
 
@@ -46,11 +51,13 @@ renderGrid can input grid snake coinpos = do
     let snakeTail = getSnakeTail snake
 
     -- new grid with the new snake.
-    let newGrid = refreshGrid grid gSnake coinpos
+    let newGrid = refreshGrid grid newSnake coinpos
 
     -- Get what kind of collision and do action depending on what the snake
     -- collides with.
     let collisionState = collision newGrid newSnake
+
+    set scoreelem [ prop "innerHTML" =: ("Score " ++ show (score newSnake))]
     case collisionState of CWall    -> do clearChildren documentBody
                                           alert "You lost"
                                           main
@@ -67,18 +74,20 @@ renderGrid can input grid snake coinpos = do
                                           g <- newStdGen
                                           let coinpos = ranPos g 14 gSnake
 
+                                          -- new grid with the new snake.
+                                          let newGrid = refreshGrid grid gSnake coinpos
                                           -- render the cancas with the new grid
                                           render can $ drawGrid newGrid 0
 
                                           -- set a new timer, wait for xxx milliseconds
                                           -- and then call renderGrid again. (Inspo from "fallingballs" example)
-                                          setTimer (Once 200) (renderGrid can input grid gSnake coinpos) >> return ()
+                                          setTimer (Once 200) (renderGrid can input newGrid gSnake coinpos scoreelem) >> return ()
 
                            CNothing -> do let newGrid = refreshGrid grid newSnake coinpos
                                           -- set a new timer, wait for xxx milliseconds
                                           -- and then call renderGrid again. (Inspo from "fallingballs" example)
                                           render can $ drawGrid newGrid 0
-                                          setTimer (Once 200) (renderGrid can input grid newSnake coinpos) >> return ()
+                                          setTimer (Once 200) (renderGrid can input grid newSnake coinpos scoreelem) >> return ()
 
 
 
@@ -136,3 +145,20 @@ getDirection (KeyData keyCode _ _ _ _) | keyCode == 38 = "up"
                                        | keyCode == 40 = "down"
                                        | keyCode == 37 = "left"
                                        | otherwise = ""
+
+--copied from examples
+appendChildren :: Elem -> [Elem] -> IO ()
+appendChildren parent children = sequence_ [appendChild parent c | c <- children]
+
+--copied from examples
+wrapDiv :: Elem -> IO Elem
+wrapDiv e = do
+   d <- newElem "div"
+   appendChild d e
+   return d
+
+--Copied from given examples
+column :: Elem -> [Elem] -> IO ()
+column parent children = do
+   cs <- sequence [wrapDiv c | c <- children]
+   appendChildren parent cs
