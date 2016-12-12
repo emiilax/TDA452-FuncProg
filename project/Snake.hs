@@ -126,10 +126,12 @@ ranPos g n snake | isSnakePos (x,y) snake = ranPos g2 n snake
   where (x,g1) = randomR(0, n) g
         (y,g2) = randomR(0, n) g1
 
--- 
+
+-- calculates the score of the snake
 score :: Snake -> Int
 score snake = snakeLength snake - snakeLength startSnake
 
+-- returns the snake lenght
 snakeLength :: Snake -> Int
 snakeLength End = 0
 snakeLength (Add pos restOfSnake) = 1 + snakeLength restOfSnake

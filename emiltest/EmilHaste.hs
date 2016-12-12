@@ -7,7 +7,8 @@ import System.Random
 
 
 -- Main method that runs the program.
-main = do canvas <- mkCanvas 300 -- Creates a canvas (the snake-field)
+main = do prompt "Hur stor bana vill du ha?"
+          canvas <- mkCanvas 300 -- Creates a canvas (the snake-field)
           appendChild documentBody canvas
           Just can <- getCanvas canvas
 

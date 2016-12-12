@@ -46,7 +46,7 @@ renderGrid can input grid snake coinpos = do
     let snakeTail = getSnakeTail snake
 
     -- new grid with the new snake.
-    let newGrid = refreshGrid grid gSnake coinpos
+    let newGrid = refreshGrid grid newSnake coinpos
 
     -- Get what kind of collision and do action depending on what the snake
     -- collides with.
