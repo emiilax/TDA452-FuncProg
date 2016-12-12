@@ -9,9 +9,6 @@ import System.Random
 main = do canvas <- mkCanvas 300 300
           appendChild documentBody canvas
           Just can <- getCanvas canvas
-
-          --render can (drawGrid grid 0)
-
           input1 <- newElem "input"
           setProp input1 "value" currDir
           input2 <- newElem "input"
@@ -44,9 +41,6 @@ main = do canvas <- mkCanvas 300 300
 
                                      CNothing -> do render can $ drawGrid newGrid 0
                                                     setTimer (Once 200) (renderGrid newSnake coinpos) >> return ()
-
-          {-let move = do s <- getProp input1 "value"
-                        renderGrid (toString s) -}
 
 
 
@@ -118,11 +112,6 @@ theSnake = Add (3,3) End
 
 ------------- BÖÖÖÖÖÖÖÖS ---------------
 
-twoSnowMenInABox :: Picture ()
-twoSnowMenInABox = do
-    fill   $ tile 100
-    stroke $ tile 200
-    stroke $ rect (50,10) (250,150)
 
 {-
 incInput1 :: Elem -> IO()

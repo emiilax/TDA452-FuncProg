@@ -4,10 +4,11 @@ import System.Random
 
 -- Represents the snake-field
 data Grid = Grid [[Tile]]
+  deriving(Show)
 
 -- Represents a tile in the grid
 data Tile = SnakeBody | Coin | Empty
-  deriving (Eq)
+  deriving (Eq, Show)
 -- Represents a position in the grid
 type Pos = (Int, Int)
 
