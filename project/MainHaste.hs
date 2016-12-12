@@ -6,159 +6,133 @@ import Haste.Graphics.Canvas
 import System.Random
 
 
-main = do canvas <- mkCanvas 300 300
+-- Main method that runs the program.
+main = do canvas <- mkCanvas 300 -- Creates a canvas (the snake-field)
           appendChild documentBody canvas
           Just can <- getCanvas canvas
 
-          --render can (drawGrid grid 0)
-
-          input1 <- newElem "input"
-          setProp input1 "value" currDir
-          input2 <- newElem "input"
-          setProp input2 "value" (show 1)
-          row documentBody [input1, input2]
-
-
-          let renderGrid snake coinpos = do
-              n <- getProp input1 "value"
-              let dir = toString n
-              let newSnake = moveSnake snake dir
-              let snakeTail = getSnakeTail snake
-              writeLog (show snake)
-              let newGrid = refreshGrid grid newSnake coinpos
-              let collisionState = collision newGrid newSnake
-              writeLog (show collisionState)
-
-
-              case collisionState of CWall -> do clearChildren documentBody
-                                                 alert ("You lost. Score " ++ show (score newSnake))
-                                                 main
-                                     CSnake -> do clearChildren documentBody
-                                                  alert ("Stop hitting yourself! Score " ++ show (score newSnake))
-                                                  main
-                                     CCoin  -> do g <- newStdGen
-                                                  let gSnake = growSnake newSnake snakeTail
-                                                  let newGrid = refreshGrid grid gSnake (ranPos g 14 gSnake)
-                                                  render can $ drawGrid newGrid 0
-                                                  setTimer (Once 200) (renderGrid gSnake (ranPos g 14 gSnake)) >> return ()
-
-                                     CNothing -> do render can $ drawGrid newGrid 0
-                                                    setTimer (Once 200) (renderGrid newSnake coinpos) >> return ()
-
-          {-let move = do s <- getProp input1 "value"
-                        renderGrid (toString s) -}
-
-
-
-
-          --renderGrid can (refreshGrid grid theSnake) theSnake input1
+          -- inputBox that contains the last pressed direction. Used becouse
+          -- you can not have global variables. This box is hided in the html
+          keyInput <- newElem "input"
+          setProp keyInput "value" defaultDir
 
           documentBody `onEvent` KeyDown $ \k -> do
             let value = getDirection k
             let currDir = value
             case length value of  0 -> return ()
-                                  _ -> set input1 [prop "value" =: value]
+                                  _ -> set keyInput [prop "value" =: value]
 
           g<-newStdGen
-          renderGrid startSnake (ranPos g 14 startSnake)
-          --incInput2 input2
+          renderGrid can keyInput grid startSnake (ranPos g 14 startSnake)
 
-          --onEvent txt KeyUp $ \keycode -> do
-          --  alert keycode
+--Method that renders the grid. "This is where the magic happens". It calls on
+--itself when the timer-event is fired.
+--
+--Inputs:
+--  canvas = this is where it all is drawn
+--  elem   = the inutfield that holds the direction
+--  grid   = the grid that the snake is drawn on
+--  snake  = the snake
+--  pos    = the position of the coin
+renderGrid :: Canvas -> Elem -> Grid -> Snake -> Pos -> IO()
+renderGrid can input grid snake coinpos = do
+    n <- getProp input "value"
+    let dir = toString n
 
-currDir :: String
-currDir = "up"
+    -- moves the snake in a given direction
+    let newSnake = moveSnake snake dir
 
-mkCanvas :: Int -> Int -> IO Elem
-mkCanvas width height = do
+    -- used to know where to add a snake-part if a coin is collected
+    let snakeTail = getSnakeTail snake
+
+    -- new grid with the new snake.
+    let newGrid = refreshGrid grid gSnake coinpos
+
+    -- Get what kind of collision and do action depending on what the snake
+    -- collides with.
+    let collisionState = collision newGrid newSnake
+    case collisionState of CWall    -> do clearChildren documentBody
+                                          alert "You lost"
+                                          main
+
+                           CSnake   -> do clearChildren documentBody
+                                          alert "You lost"
+                                          main
+
+                                          -- calculate new snake if coin collected
+                                          -- adds to the tail
+                           CCoin    -> do let gSnake = growSnake newSnake snakeTail
+
+                                          -- calculate new random pos for the new coin
+                                          g <- newStdGen
+                                          let coinpos = ranPos g 14 gSnake
+
+                                          -- render the cancas with the new grid
+                                          render can $ drawGrid newGrid 0
+
+                                          -- set a new timer, wait for xxx milliseconds
+                                          -- and then call renderGrid again. (Inspo from "fallingballs" example)
+                                          setTimer (Once 200) (renderGrid can input grid gSnake coinpos) >> return ()
+
+                           CNothing -> do let newGrid = refreshGrid grid newSnake coinpos
+                                          -- set a new timer, wait for xxx milliseconds
+                                          -- and then call renderGrid again. (Inspo from "fallingballs" example)
+                                          render can $ drawGrid newGrid 0
+                                          setTimer (Once 200) (renderGrid can input grid newSnake coinpos) >> return ()
+
+
+
+-- String containing the default direction
+defaultDir :: String
+defaultDir = "up"
+
+-- method used for creating the canvas (Copied from examples given on homepage).
+--Creates a square-canvas with a given sidelenght
+mkCanvas :: Int -> IO Elem
+mkCanvas sideLength = do
     canvas <- newElem "canvas"
     setStyle canvas "border" "1px solid black"
     setStyle canvas "backgroundColor" "white"
     set canvas
-        [ prop "width"  =: show width
-        , prop "height" =: show height
+        [ prop "width"  =: show sideLength
+        , prop "height" =: show sideLength
         ]
+
     return canvas
 
 
-{-grid :: [[Int]]
-grid = [[0,0,0,0,0,0],[1,1,1,0,0,0],[0,0,0,0,0,0]]
-
-grid1 :: [[Int]]
-grid1 = [[0,0,0,0,0,0],[1,1,1,1,1,1],[0,0,0,0,0,0]]-}
-
-tile :: Double -> Shape ()
-tile x = rect (x,x) (x+20, x+20)
-
+-- Method used to draw the grid on the canvas. uses a helpfuntion that that
+-- fill tiles in a list.
 drawGrid :: Grid -> Int -> Picture ()
 drawGrid (Grid []) _     = return ()
 drawGrid (Grid (x:xs)) n = do fillTiles x n
                               drawGrid (Grid xs) (n+20)
 
 
-
+-- Method used to fill a tile in a given row and column. Uses a helpfuntion
+-- filltiles' to draw the row. (We were trying to use map, but since we needed
+-- the column and row we didn't find a way.)
 fillTiles :: [Tile] -> Int -> Picture ()
 fillTiles list = fillTiles' list 0
 
+-- fills tiles in a row. fills with different colors an shapes depending on the
+-- tile
 fillTiles' :: [Tile] -> Int -> Int-> Picture ()
 fillTiles' [] _  _   = return ()
 fillTiles' (x:xs) row col = do
     let drow = fromIntegral row
     let dcol = fromIntegral col
-    case x of Empty  -> color (RGB 255 255 255) $ stroke $ rect (drow, dcol) (drow+20, dcol+20)
-              SnakeBody -> color (RGB 255 0 0) $ fill $ circle (drow+10, dcol+10) 10
-              Coin -> color (RGB 255 215 0) $ fill $ circle (drow+10, dcol+10) 10
+    case x of Empty     -> color (RGB 255 255 255) $ stroke $ rect (drow, dcol) (drow+20, dcol+20)
+              SnakeBody -> color (RGB 255 0 0)     $ fill   $ circle (drow+10, dcol+10) 10
+              Coin      -> color (RGB 255 215 0)   $ fill   $ circle (drow+10, dcol+10) 10
     fillTiles' xs (row+20) col
 
 
-
-
-theSnake :: Snake
-theSnake = Add (3,3) End
-
-------------- BÖÖÖÖÖÖÖÖS ---------------
-
-twoSnowMenInABox :: Picture ()
-twoSnowMenInABox = do
-    fill   $ tile 100
-    stroke $ tile 200
-    stroke $ rect (50,10) (250,150)
-
-{-
-incInput1 :: Elem -> IO()
-incInput1 input2 = do s <- getProp input1 "value"
-                      setProp input2 "value" (s)
-                      setTimer (Once 1000) (incInput2 input2) >> return ()-}
-
-
--- inspo from FallingBalls
-incInput2 :: Elem -> IO()
-incInput2 input2 = do s <- getProp input2 "value"
-                      let n = read s
-                      setProp input2 "value" (show (n+1))
-                      setTimer (Once 1000) (incInput2 input2) >> return ()
-
+-- Method used to parse the key pressed. If the key pressed is not "up", "down",
+-- "right" or "left" it just returns an empty string.
 getDirection :: KeyData -> String
 getDirection (KeyData keyCode _ _ _ _) | keyCode == 38 = "up"
                                        | keyCode == 39 = "right"
                                        | keyCode == 40 = "down"
                                        | keyCode == 37 = "left"
                                        | otherwise = ""
-
-appendChildren :: Elem -> [Elem] -> IO ()
-appendChildren parent children = sequence_ [appendChild parent c | c <- children]
-
-row :: Elem -> [Elem] -> IO ()
-row = appendChildren
-
-
-wrapDiv :: Elem -> IO Elem
-wrapDiv e = do
-    d <- newElem "div"
-    appendChild d e
-    return d
-
-column :: Elem -> [Elem] -> IO ()
-column parent children = do
-    cs <- sequence [wrapDiv c | c <- children]
-    appendChildren parent cs

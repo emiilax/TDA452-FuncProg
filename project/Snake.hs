@@ -8,6 +8,7 @@ data Grid = Grid [[Tile]]
 -- Represents a tile in the grid
 data Tile = SnakeBody | Coin | Empty
   deriving (Eq)
+
 -- Represents a position in the grid
 type Pos = (Int, Int)
 
@@ -40,7 +41,8 @@ updateTileInGrid (Grid grid) (row, col) tile = newGrid
 
 
 
--- copied from Sudoku. Found it very useful in this
+-- Puts an object on a given place in a list. (Copied from Sudoku. Found it very
+-- useful in this project)
 (!!=) :: [a] -> (Int, a) -> [a]
 (!!=) x (pos,_) | length x < pos = error "(!!=) index bigger than list length"
                 | pos < 0        = error "(!!= negative index)"
@@ -57,12 +59,13 @@ refreshGrid' g End cp = updateTileInGrid g cp Coin
 refreshGrid' g (Add pos snake) cp = refreshGrid' updatedGrid snake cp
   where updatedGrid = updateTileInGrid g pos SnakeBody
 
--- creates an empty grid
+-- creates an empty grid with a given size.
 createGrid :: Int -> Grid
 createGrid n = Grid (replicate n (replicate n Empty))
 
 
-
+-- Check what kind of collision it is. Used to determine what action that should
+-- be made.
 collision :: Grid -> Snake -> CollisionState
 collision _ (Add (row, col) restOfSnake)          | row > 14 || col > 14 || row < 0 || col < 0 = CWall
 collision (Grid grid) (Add (row, col) restOfSnake)| isSnakePos (row, col) restOfSnake          = CSnake
@@ -70,17 +73,23 @@ collision (Grid grid) (Add (row, col) restOfSnake)| isSnakePos (row, col) restOf
                                                   | otherwise                                  = CNothing
   where tile = (grid !! row) !! col
 
-
+-- Checks wheather a pos is the snakes pos. Used to see if the snake is
+-- going into it self.
 isSnakePos :: Pos -> Snake -> Bool
 isSnakePos _ End = False
 isSnakePos (row,col) (Add (sr,sc) rsnake) | row == sr && col == sc = True
                                           | otherwise = isSnakePos (row, col) rsnake
 
 
+-- Helpfunction to see wheather the body behind the head is behind. (Sorry for vague
+-- description). Used in moveSnake to make sure that you dont go the opposite direction
+-- since that is not possible
 checkSnakePosBehind :: Pos -> Snake -> Bool
 checkSnakePosBehind _ End = False
 checkSnakePosBehind (row,col) (Add (sr,sc) snake) = row == sr && col == sc
--- Moves the snake in a given direction
+
+-- Moves the snake in a given direction. Uses checkSnakePosBehind to determine
+-- wheather the move is ok or not.
 moveSnake :: Snake -> String -> Snake
 moveSnake (Add (row,col) snake) dir | dir == "down"  && not(checkSnakePosBehind (row+1,col) snake)= Add (row+1,col) restOfSnake
                                     | dir == "down"  = Add (row-1,col) restOfSnake
@@ -97,24 +106,27 @@ moveSnake (Add (row,col) snake) dir | dir == "down"  && not(checkSnakePosBehind 
       moveSnake' pos (Add pos1 snake) = Add pos (moveSnake' pos1 snake)
 
 
+-- Returns the tail of the snake.
 getSnakeTail :: Snake -> Pos
 getSnakeTail (Add pos End ) = pos
 getSnakeTail (Add pos snake) = getSnakeTail snake
 
-{-growSnake :: Snake -> Snake
-growSnake (Add (x,y) End)   = (Add (x,y) (Add (x+1,y) End))
-growSnake (Add pos restSnake) = (Add pos (growSnake restSnake))
--}
+-- Grows the snake. Puts a snake part at a given position. In the implementation,
+-- the position is the snake-tail of snake before it moved.
 growSnake :: Snake -> Pos -> Snake
 growSnake (Add pos End) tailPos  = Add pos (Add tailPos End )
 growSnake (Add pos snake) newPos  = Add pos (growSnake snake newPos)
 
+-- returns a random position on the grid. Used to put the coin on a random place
+-- in the grid. We have the snake as input to make sure that the coint not
+-- end up on a snake-pos.
 ranPos :: StdGen -> Int -> Snake -> Pos
 ranPos g n snake | isSnakePos (x,y) snake = ranPos g2 n snake
                  | otherwise = (x,y)
   where (x,g1) = randomR(0, n) g
         (y,g2) = randomR(0, n) g1
 
+-- 
 score :: Snake -> Int
 score snake = snakeLength snake - snakeLength startSnake
 
