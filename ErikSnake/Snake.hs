@@ -104,20 +104,27 @@ growSnake (Add pos restSnake) = (Add pos (growSnake restSnake))
 growSnake :: Snake -> Pos -> Snake
 growSnake snake newPos = (Add newPos snake)
 
-ranPos :: StdGen -> Int -> Pos
-ranPos g n = (x,y)
+ranPos :: StdGen -> Int -> Snake -> Pos
+ranPos g n snake | isSnakePos (x,y) snake = ranPos g2 n snake
+                 | otherwise = (x,y)
   where (x,g1) = randomR(0, n) g
         (y,g2) = randomR(0, n) g1
 
+score :: Snake -> Int
+score snake = snakeLength snake - snakeLength startSnake
+
+snakeLength :: Snake -> Int
+snakeLength End = 0
+snakeLength (Add pos restOfSnake) = 1 + snakeLength restOfSnake
 
 ------------ Testing variables ------------
 
-snake = (Add (3,6) (Add (3,5) (Add (3,4) (Add (3,3) (Add (3,2) (Add (3,1) End))))))
+startSnake = (Add (3,6) (Add (3,5) (Add (3,4) (Add (3,3) (Add (3,2) (Add (3,1) End))))))
 
 shortsnake:: Snake
 shortsnake = Add (4,4) End
 
-s1 = moveSnake snake "right"
+s1 = moveSnake startSnake "right"
 g1 = refreshGrid grid s1
 
 s2 = moveSnake s1 "up"
