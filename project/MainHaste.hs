@@ -23,19 +23,27 @@ main = do canvas <- mkCanvas 300 300
               n <- getProp input1 "value"
               let dir = toString n
               let newSnake = moveSnake snake dir
+              let snakeTail = getSnakeTail snake
+              writeLog (show snake)
               let newGrid = refreshGrid grid newSnake coinpos
               let collisionState = collision newGrid newSnake
-
               writeLog (show collisionState)
 
-              case collisionState of CWall -> do clearChildren documentBody
-                                                 prompt "You lost"
-                                                 main
-                                     CSnake -> alert "lel snake pleb"
-                                     CNothing -> return ()
 
-              render can $ drawGrid newGrid 0
-              setTimer (Once 300) (renderGrid newSnake coinpos) >> return ()
+              case collisionState of CWall -> do clearChildren documentBody
+                                                 alert ("You lost. Score " ++ show (score newSnake))
+                                                 main
+                                     CSnake -> do clearChildren documentBody
+                                                  alert ("Stop hitting yourself! Score " ++ show (score newSnake))
+                                                  main
+                                     CCoin  -> do g <- newStdGen
+                                                  let gSnake = growSnake newSnake snakeTail
+                                                  let newGrid = refreshGrid grid gSnake (ranPos g 14 gSnake)
+                                                  render can $ drawGrid newGrid 0
+                                                  setTimer (Once 200) (renderGrid gSnake (ranPos g 14 gSnake)) >> return ()
+
+                                     CNothing -> do render can $ drawGrid newGrid 0
+                                                    setTimer (Once 200) (renderGrid newSnake coinpos) >> return ()
 
           {-let move = do s <- getProp input1 "value"
                         renderGrid (toString s) -}
@@ -52,8 +60,8 @@ main = do canvas <- mkCanvas 300 300
                                   _ -> set input1 [prop "value" =: value]
 
           g<-newStdGen
-          renderGrid snake (ranPos g 14)
-          incInput2 input2
+          renderGrid startSnake (ranPos g 14 startSnake)
+          --incInput2 input2
 
           --onEvent txt KeyUp $ \keycode -> do
           --  alert keycode
