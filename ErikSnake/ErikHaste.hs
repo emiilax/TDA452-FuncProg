@@ -4,7 +4,7 @@ import Haste.Events
 import Haste.DOM
 import Haste.Graphics.Canvas
 import System.Random
-import Data.Char
+
 
 main = do canvas <- mkCanvas 300 300
           appendChild documentBody canvas
@@ -22,12 +22,11 @@ main = do canvas <- mkCanvas 300 300
           let renderGrid snake coinpos = do
               n <- getProp input1 "value"
               let dir = toString n
-
-
               let newSnake = moveSnake snake dir
+              let snakeTail = getSnakeTail snake
+              writeLog (show snake)
               let newGrid = refreshGrid grid newSnake coinpos
               let collisionState = collision newGrid newSnake
-
               writeLog (show collisionState)
 
 
@@ -37,17 +36,14 @@ main = do canvas <- mkCanvas 300 300
                                      CSnake -> do clearChildren documentBody
                                                   alert ("Stop hitting yourself! Score " ++ show (score newSnake))
                                                   main
-                                     CCoin    -> do render can $ drawGrid newGrid 0
-                                                    g <- newStdGen
-                                                    let grownSnake = growSnake newSnake coinpos
-                                                    let mgSnake = moveSnake grownSnake dir
-                                                    let random = ranPos g 14 mgSnake
-                                                    let newerGrid = refreshGrid newGrid mgSnake random
-                                                    render can $ drawGrid newerGrid 0
-                                                    setTimer (Once 300) (renderGrid mgSnake random)
-                                                    >> return ()
+                                     CCoin  -> do g <- newStdGen
+                                                  let gSnake = growSnake newSnake snakeTail
+                                                  let newGrid = refreshGrid grid gSnake (ranPos g 14 gSnake)
+                                                  render can $ drawGrid newGrid 0
+                                                  setTimer (Once 200) (renderGrid gSnake (ranPos g 14 gSnake)) >> return ()
+
                                      CNothing -> do render can $ drawGrid newGrid 0
-                                                    setTimer (Once 300) (renderGrid newSnake coinpos) >> return ()
+                                                    setTimer (Once 200) (renderGrid newSnake coinpos) >> return ()
 
           {-let move = do s <- getProp input1 "value"
                         renderGrid (toString s) -}
@@ -65,15 +61,13 @@ main = do canvas <- mkCanvas 300 300
 
           g<-newStdGen
           renderGrid startSnake (ranPos g 14 startSnake)
-          incInput2 input2
+          --incInput2 input2
 
           --onEvent txt KeyUp $ \keycode -> do
           --  alert keycode
 
 currDir :: String
 currDir = "up"
-
-type MoveBool = Bool
 
 mkCanvas :: Int -> Int -> IO Elem
 mkCanvas width height = do

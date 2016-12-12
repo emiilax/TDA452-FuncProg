@@ -14,7 +14,7 @@ type Pos = (Int, Int)
 -- Represents a snake. Contains a list of positions
 data Snake = Add Pos Snake | End
 instance Show Snake where
-  show End = " "
+  show End = "--"
   show (Add pos snake) = show pos ++ show snake
 
 -- Represents a collision type.
@@ -97,12 +97,17 @@ moveSnake (Add (row,col) snake) dir | dir == "down"  && not(checkSnakePosBehind 
       moveSnake' pos (Add pos1 snake) = Add pos (moveSnake' pos1 snake)
 
 
+getSnakeTail :: Snake -> Pos
+getSnakeTail (Add pos End ) = pos
+getSnakeTail (Add pos snake) = getSnakeTail snake
+
 {-growSnake :: Snake -> Snake
 growSnake (Add (x,y) End)   = (Add (x,y) (Add (x+1,y) End))
 growSnake (Add pos restSnake) = (Add pos (growSnake restSnake))
 -}
 growSnake :: Snake -> Pos -> Snake
-growSnake snake newPos = (Add newPos snake)
+growSnake (Add pos End) tailPos  = Add pos (Add tailPos End )
+growSnake (Add pos snake) newPos  = Add pos (growSnake snake newPos)
 
 ranPos :: StdGen -> Int -> Snake -> Pos
 ranPos g n snake | isSnakePos (x,y) snake = ranPos g2 n snake
@@ -116,6 +121,7 @@ score snake = snakeLength snake - snakeLength startSnake
 snakeLength :: Snake -> Int
 snakeLength End = 0
 snakeLength (Add pos restOfSnake) = 1 + snakeLength restOfSnake
+
 
 ------------ Testing variables ------------
 
