@@ -1,16 +1,37 @@
 module Snake where
 import Data.Maybe
 import System.Random
+import Test.QuickCheck
 
+
+-- ------ DATATYPES ------ --
 -- Represents the snake-field
 data Grid = Grid [[Tile]]
+  deriving (Show)
+
+instance Arbitrary Grid where
+  arbitrary =
+    do k <- genSize
+       rows <- sequence [ sequence [ genTile | _ <- [1..k] ] | _ <- [1..k]]
+       return (Grid rows)
+
+
+
 
 -- Represents a tile in the grid
 data Tile = SnakeBody | Coin | Empty
-  deriving (Eq)
+  deriving (Eq,Show)
+
+instance Arbitrary Tile where
+  arbitrary = oneof [ return SnakeBody, return Coin
+                    , return Empty ]
+
+
 
 -- Represents a position in the grid
 type Pos = (Int, Int)
+
+
 
 -- Represents a snake. Contains a list of positions
 data Snake = Add Pos Snake | End
@@ -18,9 +39,44 @@ instance Show Snake where
   show End = "--"
   show (Add pos snake) = show pos ++ show snake
 
+instance Arbitrary Snake where
+  arbitrary = frequency [  (1,  return End)
+                        ,  (8, do pos  <-  genPos
+                                  snake  <-  arbitrary
+                                  return (Add pos snake))
+                        ]
+
+
 -- Represents a collision type.
 data CollisionState = CWall | CCoin | CSnake | CNothing
   deriving (Eq, Show)
+
+-- ------ END DATATYPES ------ --
+
+
+-- ------ GENERATORS ------ --
+
+genSize :: Gen Int
+genSize = choose (20,40)
+
+genGrid :: Gen Grid
+genGrid = arbitrary
+
+genSnake :: Gen Snake
+genSnake = arbitrary
+
+genPos :: Gen Pos
+genPos = do x <- choose (0, 20-1)
+            y <- choose (0, 20-1)
+            return (x,y)
+
+genTile :: Gen Tile
+genTile = arbitrary
+
+-- ------ END GENERATORS ------ --
+
+
+-- ------ FUNCTIONS ------ --
 
 -- Returns the grid as a String
 showGrid :: Grid -> String
@@ -39,25 +95,50 @@ updateTileInGrid :: Grid -> Pos -> Tile -> Grid
 updateTileInGrid (Grid grid) (row, col) tile = newGrid
   where newGrid = Grid (grid !!= (row,((grid !! row) !!= (col,tile))))
 
+-- Checks so that a tile gets updated correctly
+prop_updateTileInGrid :: Grid -> Pos -> Tile -> Bool
+prop_updateTileInGrid (Grid grid) (row, col) tile
+  | row >= length grid || col >= length grid || row < 0 || col < 0  = True
+  | otherwise = (updatedGrid !! row) !! col == tile
+
+  where (Grid updatedGrid) = updateTileInGrid (Grid grid) (row, col) tile
 
 
 -- Puts an object on a given place in a list. (Copied from Sudoku. Found it very
 -- useful in this project)
 (!!=) :: [a] -> (Int, a) -> [a]
-(!!=) x (pos,_) | length x < pos = error "(!!=) index bigger than list length"
-                | pos < 0        = error "(!!= negative index)"
+(!!=) x (pos,_) | length x < pos+1 = error "(!!=) index bigger than list length"
+                | pos < -1        = error "(!!= negative index)"
 (!!=) x (pos, a) = take pos x ++ [a] ++ drop (pos+1) x
 
 
 -- Refreshes the frid with the snakes new positions. It creates a new empty
 -- grid and fill it with the Snake, instead of keeping track of snakes old pos
 refreshGrid :: Grid -> Snake -> Pos -> Grid
-refreshGrid (Grid grid) snake cp = refreshGrid' (createGrid (length grid)) snake cp
+refreshGrid (Grid grid) = refreshGrid' (createGrid (length grid))
 
 refreshGrid' :: Grid -> Snake -> Pos -> Grid
 refreshGrid' g End cp = updateTileInGrid g cp Coin
 refreshGrid' g (Add pos snake) cp = refreshGrid' updatedGrid snake cp
   where updatedGrid = updateTileInGrid g pos SnakeBody
+
+
+prop_refreshGrid :: Grid -> Snake -> Pos -> Bool
+prop_refreshGrid (Grid grid) snake (row,col)
+  | row >= length grid || col >= length grid || row < 0 || col < 0  = True
+  | otherwise = checkSnakeInGrid refreshedGrid snake && checkCoinPosInGrid refreshedGrid (row,col)
+
+  where (Grid refreshedGrid) = refreshGrid (Grid grid) snake (row,col)
+
+
+checkSnakeInGrid :: [[Tile]] -> Snake -> Bool
+checkSnakeInGrid _ End = True
+checkSnakeInGrid list (Add (row,col) snake) = (list !! row) !! col == SnakeBody
+                                                && checkSnakeInGrid list snake
+
+
+checkCoinPosInGrid :: [[Tile]] -> Pos -> Bool
+checkCoinPosInGrid list (row, col) = (list !! row) !! col == Coin
 
 -- creates an empty grid with a given size.
 createGrid :: Int -> Grid
@@ -67,7 +148,7 @@ createGrid n = Grid (replicate n (replicate n Empty))
 -- Check what kind of collision it is. Used to determine what action that should
 -- be made.
 collision :: Grid -> Snake -> CollisionState
-collision _ (Add (row, col) restOfSnake)          | row > 14 || col > 14 || row < 0 || col < 0 = CWall
+collision (Grid grid) (Add (row, col) restOfSnake)| row > (length grid - 1) || col > (length grid - 1)|| row < 0 || col < 0 = CWall
 collision (Grid grid) (Add (row, col) restOfSnake)| isSnakePos (row, col) restOfSnake          = CSnake
                                                   | tile == Coin                               = CCoin
                                                   | otherwise                                  = CNothing
@@ -140,15 +221,3 @@ snakeLength (Add pos restOfSnake) = 1 + snakeLength restOfSnake
 ------------ Testing variables ------------
 
 startSnake = (Add (3,6) (Add (3,5) (Add (3,4) (Add (3,3) (Add (3,2) (Add (3,1) End))))))
-
-shortsnake:: Snake
-shortsnake = Add (4,4) End
-
-s1 = moveSnake startSnake "right"
-g1 = refreshGrid grid s1
-
-s2 = moveSnake s1 "up"
-g2 = refreshGrid grid s2
-
-
-grid = createGrid 15

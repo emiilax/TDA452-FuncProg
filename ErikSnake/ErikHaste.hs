@@ -14,9 +14,8 @@ main = do canvas <- mkCanvas 300 300
 
           input1 <- newElem "input"
           setProp input1 "value" currDir
-          input2 <- newElem "input"
-          setProp input2 "value" (show 1)
-          row documentBody [input1, input2]
+          scoreText <- newElem "scoreText"
+          column documentBody [scoreText]
 
 
           let renderGrid snake coinpos = do
@@ -28,6 +27,7 @@ main = do canvas <- mkCanvas 300 300
               let newGrid = refreshGrid grid newSnake coinpos
               let collisionState = collision newGrid newSnake
               writeLog (show collisionState)
+              set scoreText [ prop "innerHTML" =: ("Score " ++ show (score newSnake))]
 
 
               case collisionState of CWall -> do clearChildren documentBody
@@ -40,10 +40,10 @@ main = do canvas <- mkCanvas 300 300
                                                   let gSnake = growSnake newSnake snakeTail
                                                   let newGrid = refreshGrid grid gSnake (ranPos g 14 gSnake)
                                                   render can $ drawGrid newGrid 0
-                                                  setTimer (Once 200) (renderGrid gSnake (ranPos g 14 gSnake)) >> return ()
+                                                  setTimer (Once 300) (renderGrid gSnake (ranPos g 14 gSnake)) >> return ()
 
                                      CNothing -> do render can $ drawGrid newGrid 0
-                                                    setTimer (Once 200) (renderGrid newSnake coinpos) >> return ()
+                                                    setTimer (Once 300) (renderGrid newSnake coinpos) >> return ()
 
           {-let move = do s <- getProp input1 "value"
                         renderGrid (toString s) -}
@@ -65,6 +65,7 @@ main = do canvas <- mkCanvas 300 300
 
           --onEvent txt KeyUp $ \keycode -> do
           --  alert keycode
+
 
 currDir :: String
 currDir = "up"
