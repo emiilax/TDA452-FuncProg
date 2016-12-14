@@ -8,11 +8,7 @@ import Haste.Concurrent
 
 
 -- Main method that runs the program.
-main = do size <- prompt "Hello user, size (between 15 and 30)?"
-          let n = read size
-          writeLog (show (10*n))
-
-          canvas <- mkCanvas (n*20) -- Creates a canvas (the snake-field)
+main = do canvas <- mkCanvas (20*20) -- Creates a canvas (the snake-field)
           appendChild documentBody canvas
           Just can <- getCanvas canvas
 
@@ -22,15 +18,27 @@ main = do size <- prompt "Hello user, size (between 15 and 30)?"
           -- you can not have global variables. This box is hided in the html
           keyInput <- newElem "input"
           setProp keyInput "value" ""
-          setProp keyInput "value" defaultDir
           scoreText <- newElem "scoreText"
-          column documentBody [scoreText]
 
+
+          sizeButton <- newElem "button"
+          set sizeButton [ prop "innerHTML" =: "Change size" ]
+
+
+          column documentBody [scoreText, sizeButton]
+
+          let (Grid grid) = createGrid 20
+          g<-newStdGen
+          let coinpos = ranPos g (length grid - 1) startSnake
+          render can $ drawGrid (Grid grid) 0
+
+
+--          onEvent sizeButton Click $ \_ -> do s <- prompt "How many tiles (20-40)"
+--                                              let n = read s :: Int
 
 
 
           documentBody `onEvent` KeyDown $ \k -> do
-
             let value = getDirection k
             let currDir = value
             case length value of  0 -> return ()
@@ -38,9 +46,7 @@ main = do size <- prompt "Hello user, size (between 15 and 30)?"
 
 
 
-          let (Grid grid) = createGrid n
-          g<-newStdGen
-          let coinpos = ranPos g (length grid - 1) startSnake
+
           renderGrid can keyInput (Grid grid) startSnake coinpos scoreText
 
 --Method that renders the grid. "This is where the magic happens". It calls on
@@ -58,52 +64,57 @@ renderGrid can input grid snake coinpos scoreelem = do
     n <- getProp input "value"
     let dir = toString n
 
+    writeLog (toString (dir == ""))
+    case dir of "" -> do let newGrid = refreshGrid grid snake coinpos
+                         render can $ drawGrid newGrid 0
+                         setTimer (Once 200) (renderGrid can input newGrid snake coinpos scoreelem) >> return ()
+                _  -> do
 
-    -- moves the snake in a given direction
-    let newSnake = moveSnake snake dir
+                        -- moves the snake in a given direction
+                        let newSnake = moveSnake snake dir
 
-    -- used to know where to add a snake-part if a coin is collected
-    let snakeTail = getSnakeTail snake
+                        -- used to know where to add a snake-part if a coin is collected
+                        let snakeTail = getSnakeTail snake
 
-    -- new grid with the new snake.
-    let newGrid = refreshGrid grid newSnake coinpos
+                        -- new grid with the new snake.
+                        let newGrid = refreshGrid grid newSnake coinpos
 
-    -- Get what kind of collision and do action depending on what the snake
-    -- collides with.
-    let collisionState = collision newGrid newSnake
+                        -- Get what kind of collision and do action depending on what the snake
+                        -- collides with.
+                        let collisionState = collision newGrid newSnake
 
-    set scoreelem [ prop "innerHTML" =: ("Score " ++ show (score newSnake))]
-    case collisionState of CWall    -> do clearChildren documentBody
-                                          alert "You lost"
-                                          main
+                        set scoreelem [ prop "innerHTML" =: ("Score " ++ show (score newSnake))]
+                        case collisionState of CWall    -> do clearChildren documentBody
+                                                              alert "You lost"
+                                                              main
 
-                           CSnake   -> do clearChildren documentBody
-                                          alert "You lost"
-                                          main
+                                               CSnake   -> do clearChildren documentBody
+                                                              alert "You lost"
+                                                              main
 
-                                          -- calculate new snake if coin collected
-                                          -- adds to the tail
-                           CCoin    -> do let gSnake = growSnake newSnake snakeTail
+                                                              -- calculate new snake if coin collected
+                                                              -- adds to the tail
+                                               CCoin    -> do let gSnake = growSnake newSnake snakeTail
 
-                                          -- calculate new random pos for the new coin
-                                          g <- newStdGen
-                                          let (Grid g1) = grid
-                                          let coinpos = ranPos g (length g1 - 1) gSnake
+                                                              -- calculate new random pos for the new coin
+                                                              g <- newStdGen
+                                                              let (Grid g1) = grid
+                                                              let coinpos = ranPos g (length g1 - 1) gSnake
 
-                                          -- new grid with the new snake.
-                                          let newGrid = refreshGrid grid gSnake coinpos
-                                          -- render the cancas with the new grid
-                                          render can $ drawGrid newGrid 0
+                                                              -- new grid with the new snake.
+                                                              let newGrid = refreshGrid grid gSnake coinpos
+                                                              -- render the cancas with the new grid
+                                                              render can $ drawGrid newGrid 0
 
-                                          -- set a new timer, wait for xxx milliseconds
-                                          -- and then call renderGrid again. (Inspo from "fallingballs" example)
-                                          setTimer (Once 200) (renderGrid can input newGrid gSnake coinpos scoreelem) >> return ()
+                                                              -- set a new timer, wait for xxx milliseconds
+                                                              -- and then call renderGrid again. (Inspo from "fallingballs" example)
+                                                              setTimer (Once 200) (renderGrid can input newGrid gSnake coinpos scoreelem) >> return ()
 
-                           CNothing -> do let newGrid = refreshGrid grid newSnake coinpos
-                                          -- set a new timer, wait for xxx milliseconds
-                                          -- and then call renderGrid again. (Inspo from "fallingballs" example)
-                                          render can $ drawGrid newGrid 0
-                                          setTimer (Once 200) (renderGrid can input grid newSnake coinpos scoreelem) >> return ()
+                                               CNothing -> do let newGrid = refreshGrid grid newSnake coinpos
+                                                              -- set a new timer, wait for xxx milliseconds
+                                                              -- and then call renderGrid again. (Inspo from "fallingballs" example)
+                                                              render can $ drawGrid newGrid 0
+                                                              setTimer (Once 200) (renderGrid can input grid newSnake coinpos scoreelem) >> return ()
 
 
 
@@ -172,6 +183,10 @@ wrapDiv e = do
    d <- newElem "div"
    appendChild d e
    return d
+
+--Copied from given examples
+row :: Elem -> [Elem] -> IO ()
+row = appendChildren
 
 --Copied from given examples
 column :: Elem -> [Elem] -> IO ()
