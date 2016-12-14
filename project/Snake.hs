@@ -32,7 +32,6 @@ instance Arbitrary Tile where
 type Pos = (Int, Int)
 
 
-
 -- Represents a snake. Contains a list of positions
 data Snake = Add Pos Snake | End
 instance Show Snake where
@@ -41,9 +40,9 @@ instance Show Snake where
 
 instance Arbitrary Snake where
   arbitrary = frequency [  (1,  return End)
-                        ,  (8, do pos  <-  genPos
+                        ,  (1, do (x,y)  <-  genPos
                                   snake  <-  arbitrary
-                                  return (Add pos snake))
+                                  return (Add (x,y) (Add (x+1,y) (Add (x+2,y) snake))))
                         ]
 
 

@@ -20,6 +20,7 @@ main = do canvas <- mkCanvas (20*20) -- Creates a canvas (the snake-field)
           setProp keyInput "value" ""
           scoreText <- newElem "scoreText"
 
+
           sizeButton <- newElem "button"
           set sizeButton [ prop "innerHTML" =: "Change size" ]
 
