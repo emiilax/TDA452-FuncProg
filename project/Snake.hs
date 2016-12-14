@@ -32,19 +32,21 @@ instance Arbitrary Tile where
 type Pos = (Int, Int)
 
 
-
 -- Represents a snake. Contains a list of positions
 data Snake = Add Pos Snake | End
 instance Show Snake where
   show End = "--"
   show (Add pos snake) = show pos ++ show snake
 
-instance Arbitrary Snake where
+{-instance Arbitrary Snake where
   arbitrary = frequency [  (1,  return End)
                         ,  (8, do pos  <-  genPos
                                   snake  <-  arbitrary
                                   return (Add pos snake))
-                        ]
+                        ]-}
+
+instance Arbitrary Snake where
+  arbitrary = createSnake genPos
 
 
 -- Represents a collision type.
@@ -72,6 +74,9 @@ genPos = do x <- choose (0, 20-1)
 
 genTile :: Gen Tile
 genTile = arbitrary
+
+createSnake :: Pos -> Snake
+createSnake (x,y) = (Add (x,y) (Add (x+1,y) (Add (x+2,y))))
 
 -- ------ END GENERATORS ------ --
 
