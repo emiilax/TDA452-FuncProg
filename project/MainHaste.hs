@@ -26,7 +26,7 @@ main = do size <- prompt "Hello user, size (between 15 and 30)?"
           scoreText <- newElem "scoreText"
           column documentBody [scoreText]
 
-          
+
 
 
           documentBody `onEvent` KeyDown $ \k -> do

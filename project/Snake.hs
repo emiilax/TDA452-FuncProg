@@ -38,15 +38,12 @@ instance Show Snake where
   show End = "--"
   show (Add pos snake) = show pos ++ show snake
 
-{-instance Arbitrary Snake where
-  arbitrary = frequency [  (1,  return End)
-                        ,  (8, do pos  <-  genPos
-                                  snake  <-  arbitrary
-                                  return (Add pos snake))
-                        ]-}
-
 instance Arbitrary Snake where
-  arbitrary = createSnake genPos
+  arbitrary = frequency [  (1,  return End)
+                        ,  (1, do (x,y)  <-  genPos
+                                  snake  <-  arbitrary
+                                  return (Add (x,y) (Add (x+1,y) (Add (x+2,y) snake))))
+                        ]
 
 
 -- Represents a collision type.
@@ -74,9 +71,6 @@ genPos = do x <- choose (0, 20-1)
 
 genTile :: Gen Tile
 genTile = arbitrary
-
-createSnake :: Pos -> Snake
-createSnake (x,y) = (Add (x,y) (Add (x+1,y) (Add (x+2,y))))
 
 -- ------ END GENERATORS ------ --
 
