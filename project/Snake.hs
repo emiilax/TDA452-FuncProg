@@ -153,6 +153,13 @@ collision (Grid grid) (Add (row, col) restOfSnake)| isSnakePos (row, col) restOf
                                                   | otherwise                                  = CNothing
   where tile = (grid !! row) !! col
 
+{-prop_checkCollision :: Pos -> Grid -> Snake -> Bool
+prop_checkCollision (x,y) grid (Add headPos rs) | (x,y) == headPos = collisionState == CCoin
+                                                | isSnakePos (x,y) rs = collisionState == CSnake
+                                                | otherwise = collisionState == CNothing
+      where updatedGrid = updateTileInGrid grid (x,y) Coin
+      where collisionState = collision updatedGrid (Add headPos rs)-}
+      
 -- Checks wheather a pos is the snakes pos. Used to see if the snake is
 -- going into it self.
 isSnakePos :: Pos -> Snake -> Bool
@@ -215,6 +222,7 @@ score snake = snakeLength snake - snakeLength startSnake
 snakeLength :: Snake -> Int
 snakeLength End = 0
 snakeLength (Add pos restOfSnake) = 1 + snakeLength restOfSnake
+
 
 
 ------------ Testing variables ------------
