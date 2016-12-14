@@ -16,17 +16,9 @@ instance Arbitrary Grid where
        return (Grid rows)
 
 
-
-
 -- Represents a tile in the grid
 data Tile = SnakeBody | Coin | Empty
   deriving (Eq,Show)
-
-instance Arbitrary Tile where
-  arbitrary = oneof [ return SnakeBody, return Coin
-                    , return Empty ]
-
-
 
 -- Represents a position in the grid
 type Pos = (Int, Int)
@@ -34,16 +26,20 @@ type Pos = (Int, Int)
 
 -- Represents a snake. Contains a list of positions
 data Snake = Add Pos Snake | End
+
 instance Show Snake where
   show End = "--"
   show (Add pos snake) = show pos ++ show snake
 
 instance Arbitrary Snake where
-  arbitrary = frequency [  (1,  return End)
-                        ,  (1, do (x,y)  <-  genPos
-                                  snake  <-  arbitrary
-                                  return (Add (x,y) (Add (x+1,y) (Add (x+2,y) snake))))
-                        ]
+  arbitrary =
+    do (x,y) <- genPos
+       return (Add (x+2,y) (Add (x+1,y) (Add (x,y) End)))
+
+instance Arbitrary Tile where
+  arbitrary = frequency [ (1, return Coin)
+                        ,(40, return Empty)]
+
 
 
 -- Represents a collision type.
@@ -65,8 +61,8 @@ genSnake :: Gen Snake
 genSnake = arbitrary
 
 genPos :: Gen Pos
-genPos = do x <- choose (0, 20-1)
-            y <- choose (0, 20-1)
+genPos = do x <- choose (0, 16)
+            y <- choose (0, 20)
             return (x,y)
 
 genTile :: Gen Tile
@@ -126,7 +122,6 @@ prop_refreshGrid :: Grid -> Snake -> Pos -> Bool
 prop_refreshGrid (Grid grid) snake (row,col)
   | row >= length grid || col >= length grid || row < 0 || col < 0  = True
   | otherwise = checkSnakeInGrid refreshedGrid snake && checkCoinPosInGrid refreshedGrid (row,col)
-
   where (Grid refreshedGrid) = refreshGrid (Grid grid) snake (row,col)
 
 
@@ -138,6 +133,9 @@ checkSnakeInGrid list (Add (row,col) snake) = (list !! row) !! col == SnakeBody
 
 checkCoinPosInGrid :: [[Tile]] -> Pos -> Bool
 checkCoinPosInGrid list (row, col) = (list !! row) !! col == Coin
+
+--isConcurrentSnake :: Snake -> Bool
+--isConcurrentSnake (Add ())
 
 -- creates an empty grid with a given size.
 createGrid :: Int -> Grid
@@ -153,13 +151,14 @@ collision (Grid grid) (Add (row, col) restOfSnake)| isSnakePos (row, col) restOf
                                                   | otherwise                                  = CNothing
   where tile = (grid !! row) !! col
 
-{-prop_checkCollision :: Pos -> Grid -> Snake -> Bool
-prop_checkCollision (x,y) grid (Add headPos rs) | (x,y) == headPos = collisionState == CCoin
-                                                | isSnakePos (x,y) rs = collisionState == CSnake
-                                                | otherwise = collisionState == CNothing
-      where updatedGrid = updateTileInGrid grid (x,y) Coin
-      where collisionState = collision updatedGrid (Add headPos rs)-}
-      
+prop_checkCollision :: Pos -> Grid -> Snake -> Bool
+prop_checkCollision (x,y) (Grid grid) (Add headPos rs) | x <= 0 || y <= 0 || x > (length grid) || y > (length grid) = True
+                                                       | isSnakePos (x,y) rs  && (x,y) == headPos = collisionState == CSnake
+                                                       | (x,y) == headPos = collisionState == CCoin
+                                                       | otherwise = collisionState == CNothing
+  where updatedGrid = updateTileInGrid (Grid grid) (x,y) Coin
+        collisionState = collision updatedGrid (Add headPos rs)
+
 -- Checks wheather a pos is the snakes pos. Used to see if the snake is
 -- going into it self.
 isSnakePos :: Pos -> Snake -> Bool

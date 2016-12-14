@@ -25,7 +25,7 @@ main = do canvas <- mkCanvas (20*20) -- Creates a canvas (the snake-field)
           set sizeButton [ prop "innerHTML" =: "Change size" ]
 
 
-          column documentBody [scoreText, sizeButton]
+          column documentBody [scoreText]
 
           let (Grid grid) = createGrid 20
           g<-newStdGen
