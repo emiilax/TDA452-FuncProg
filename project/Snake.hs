@@ -148,7 +148,7 @@ createGrid n = Grid (replicate n (replicate n Empty))
 -- Check what kind of collision it is. Used to determine what action that should
 -- be made.
 collision :: Grid -> Snake -> CollisionState
-collision (Grid grid) (Add (row, col) restOfSnake)| row > (length grid - 1) || col > (length grid - 1)|| row < 0 || col < 0 = CWall
+collision (Grid grid) (Add (row, col) _)          | row > (length grid - 1) || col > (length grid - 1)|| row < 0 || col < 0 = CWall
 collision (Grid grid) (Add (row, col) restOfSnake)| isSnakePos (row, col) restOfSnake          = CSnake
                                                   | tile == Coin                               = CCoin
                                                   | otherwise                                  = CNothing
