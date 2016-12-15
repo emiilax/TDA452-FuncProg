@@ -222,6 +222,9 @@ snakeLength :: Snake -> Int
 snakeLength End = 0
 snakeLength (Add pos restOfSnake) = 1 + snakeLength restOfSnake
 
+prop_snakeLength :: Snake -> Bool
+prop_snakeLength snake = snakeLength snake == snakeLength (growSnake snake (getSnakeTail snake)) -1
+
 
 
 ------------ Testing variables ------------
